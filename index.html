@@ -1,11 +1,9 @@
-html_content = r'''<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Công cụ chuyển PDF / Ảnh sang Word (AI OCR)</title>
-  <!-- Thư viện nhẹ tách trang PDF trên trình duyệt (tự dự phòng nếu offline) -->
-  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -54,20 +52,13 @@ html_content = r'''<!DOCTYPE html>
       color: #374151;
       min-width: 85px;
     }
-    input[type="password"], input[type="text"], input[type="number"], select {
+    input[type="password"], input[type="text"] {
       padding: 8px 10px;
       border: 1px solid #9ca3af;
       border-radius: 4px;
       font-size: 14px;
-      background: #ffffff;
-      color: #111827;
-    }
-    input[type="password"], input[type="text"] {
       flex: 1;
       min-width: 220px;
-    }
-    input[type="number"] {
-      width: 80px;
     }
 
     /* Ô nhập Model có nút xóa nhanh (x) bên trong */
@@ -83,32 +74,29 @@ html_content = r'''<!DOCTYPE html>
       min-width: 0;
       padding-right: 34px;
     }
-    .input-clear-btn {
+    .btn-clear-input {
       position: absolute;
       right: 6px;
       top: 50%;
       transform: translateY(-50%);
-      width: 24px;
-      height: 24px;
+      width: 22px;
+      height: 22px;
       padding: 0;
       border: none;
       border-radius: 50%;
-      background: transparent;
-      color: #6b7280;
-      font-size: 18px;
-      line-height: 22px;
-      font-weight: bold;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    }
-    .input-clear-btn:hover {
       background: #e5e7eb;
-      color: #111827;
+      color: #4b5563;
+      font-size: 15px;
+      font-weight: bold;
+      line-height: 20px;
+      text-align: center;
+      cursor: pointer;
+      display: none;
+      z-index: 2;
     }
-    .input-clear-btn.visible {
-      display: flex;
+    .btn-clear-input:hover {
+      background: #d1d5db;
+      color: #111827;
     }
 
     /* Chống bôi đen, copy và khóa chỉnh sửa cho ô API Key */
@@ -124,7 +112,6 @@ html_content = r'''<!DOCTYPE html>
       border-color: #d1d5db;
       cursor: not-allowed;
     }
-
     button {
       padding: 8px 14px;
       border: 1px solid #d1d5db;
@@ -172,7 +159,7 @@ html_content = r'''<!DOCTYPE html>
       position: relative;
       border: 2px dashed #9ca3af;
       border-radius: 6px;
-      padding: 24px 16px;
+      padding: 26px 16px;
       text-align: center;
       background: #f9fafb;
       cursor: pointer;
@@ -202,131 +189,31 @@ html_content = r'''<!DOCTYPE html>
 
     .file-info {
       margin-top: 12px;
-      padding: 12px;
+      padding: 10px;
       background: #f3f4f6;
-      border: 1px solid #e5e7eb;
       border-radius: 4px;
       display: none;
-      flex-direction: column;
-      gap: 10px;
-      font-size: 14px;
-    }
-    .file-info-top {
-      display: flex;
-      flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
       gap: 10px;
+      font-size: 14px;
     }
     .file-info img {
       max-height: 60px;
       border: 1px solid #d1d5db;
       border-radius: 3px;
     }
-    .options-bar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 14px;
-      align-items: center;
-      padding-top: 8px;
-      border-top: 1px solid #d1d5db;
-      font-size: 13px;
-      color: #374151;
-    }
-    .options-bar label {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-weight: 600;
-    }
-
-    /* Khung theo dõi tiến trình trực tiếp */
-    .progress-panel {
-      margin-top: 12px;
-      padding: 12px;
-      border: 1px solid #bfdbfe;
-      background: #f8fafc;
-      border-radius: 6px;
-      display: none;
-    }
-    .progress-header {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 8px;
-      font-size: 13px;
-    }
-    .phase-badge {
-      display: inline-block;
-      padding: 3px 9px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 700;
-    }
-    .phase-prep { background: #e5e7eb; color: #374151; }
-    .phase-upload { background: #fef3c7; color: #92400e; }
-    .phase-wait { background: #dbeafe; color: #1e40af; }
-    .phase-stream { background: #dcfce7; color: #166534; }
-    .phase-error { background: #fee2e2; color: #991b1b; }
-
-    .progress-metrics {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 14px;
-      font-size: 13px;
-      color: #374151;
-    }
-    .progress-metrics strong {
-      color: #111827;
-    }
-    .progress-track {
-      width: 100%;
-      height: 10px;
-      background: #e5e7eb;
-      border-radius: 999px;
-      overflow: hidden;
-      margin: 8px 0;
-    }
-    .progress-fill {
-      height: 100%;
-      width: 0%;
-      background: #2563eb;
-      transition: width 0.25s ease;
-    }
-    .progress-fill.uploading {
-      background: #d97706;
-    }
-    .progress-fill.streaming {
-      background: #16a34a;
-    }
-    .stream-preview {
-      margin-top: 8px;
-      padding: 8px 10px;
-      background: #111827;
-      color: #e5e7eb;
-      font-family: Consolas, "Courier New", monospace;
-      font-size: 12px;
-      line-height: 1.4;
-      border-radius: 4px;
-      max-height: 95px;
-      overflow-y: auto;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
     .status-bar {
       margin-top: 12px;
       padding: 10px 12px;
       border-radius: 4px;
       font-size: 14px;
       display: none;
+      font-variant-numeric: tabular-nums;
     }
     .status-info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
     .status-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
     .status-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
-    .status-warn { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
 
     .toolbar {
       display: flex;
@@ -400,15 +287,8 @@ html_content = r'''<!DOCTYPE html>
     <div class="row">
       <span class="field-label">Mã Model:</span>
       <div class="input-clear-wrap">
-        <input
-          type="text"
-          id="modelInput"
-          list="modelSuggestions"
-          value="gemini-2.5-flash"
-          placeholder="Nhập mã model (VD: gemini-2.5-flash...)"
-          autocomplete="off"
-        >
-        <button type="button" id="clearModelBtn" class="input-clear-btn" title="Xóa nhanh tên model">&times;</button>
+        <input type="text" id="modelInput" list="modelSuggestions" value="gemini-2.5-flash" placeholder="Nhập mã model (VD: gemini-2.5-flash, gemini-2.5-flash-lite...)" autocomplete="off">
+        <button type="button" class="btn-clear-input" id="clearModelBtn" title="Xóa nhanh tên model">&times;</button>
       </div>
       <datalist id="modelSuggestions">
         <option value="gemini-2.5-flash">
@@ -427,62 +307,22 @@ html_content = r'''<!DOCTYPE html>
       <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.webp,.gif,application/pdf,image/*">
       <p><strong>Nhấp trực tiếp vào khung này để chọn tệp</strong> hoặc kéo thả tệp từ thư mục vào đây</p>
       <p>Hoặc sao chép tệp / chụp màn hình rồi nhấn <strong>Ctrl + V</strong> ở bất kỳ đâu trên trang</p>
-      <p style="font-size:12px; color:#6b7280;">Hỗ trợ: PDF (tự động tách từng trang để hiển thị tiến trình trang x/xx), JPG, PNG, WEBP</p>
+      <p style="font-size:12px; color:#6b7280;">Hỗ trợ: PDF (khuyên dùng dưới 10 trang cho bản 1), JPG, PNG, WEBP (tối đa ~18MB)</p>
     </div>
 
     <div class="file-info" id="fileInfo">
-      <div class="file-info-top">
-        <div class="row">
-          <img id="imagePreview" src="" alt="Xem trước" style="display:none;">
-          <div>
-            <strong id="fileNameDisplay">ten-file.pdf</strong><br>
-            <span id="fileSizeDisplay" style="font-size:12px; color:#4b5563;">0 KB</span>
-          </div>
-        </div>
-        <div class="row">
-          <button type="button" id="clearFileBtn">Xóa tệp</button>
-          <button type="button" class="btn-primary" id="convertBtn">Bắt đầu trích xuất</button>
-          <button type="button" class="btn-danger" id="cancelBtn" style="display:none;">Hủy xử lý</button>
-        </div>
-      </div>
-
-      <div class="options-bar">
-        <label id="batchSizeWrap">
-          Tách PDF mỗi lượt:
-          <select id="batchSizeSelect">
-            <option value="1" selected>1 trang / lượt (Chuẩn nhất)</option>
-            <option value="2">2 trang / lượt</option>
-            <option value="3">3 trang / lượt</option>
-            <option value="5">5 trang / lượt</option>
-            <option value="0">Gửi nguyên tệp (1 lượt)</option>
-          </select>
-        </label>
-        <label>
-          Timeout không phản hồi (giây):
-          <input type="number" id="timeoutInput" value="90" min="15" max="600" step="5">
-        </label>
-      </div>
-    </div>
-
-    <!-- KHUNG THEO DÕI TIẾN TRÌNH STREAMING & TẢI LÊN -->
-    <div class="progress-panel" id="progressPanel">
-      <div class="progress-header">
+      <div class="row">
+        <img id="imagePreview" src="" alt="Xem trước" style="display:none;">
         <div>
-          <span class="phase-badge phase-prep" id="phaseBadge">Đang chuẩn bị</span>
-          <strong id="pageProgressText" style="margin-left:8px;">Trang 0/0</strong>
-        </div>
-        <div class="progress-metrics">
-          <span>Tải lên: <strong id="uploadPctText">0%</strong></span>
-          <span>Đã nhận: <strong id="charCountText">0</strong> ký tự</span>
-          <span>Thời gian: <strong id="elapsedTimeText">0s</strong></span>
-          <span>Chờ phản hồi: <strong id="idleTimeText">0s</strong></span>
+          <strong id="fileNameDisplay">ten-file.pdf</strong><br>
+          <span id="fileSizeDisplay" style="font-size:12px; color:#4b5563;">0 KB</span>
         </div>
       </div>
-      <div class="progress-track">
-        <div class="progress-fill" id="progressFill"></div>
+      <div class="row">
+        <button type="button" id="clearFileBtn">Xóa tệp</button>
+        <button type="button" class="btn-danger" id="cancelConvertBtn" style="display:none;">Hủy</button>
+        <button type="button" class="btn-primary" id="convertBtn">Bắt đầu trích xuất</button>
       </div>
-      <div id="phaseDetailText" style="font-size:13px; color:#374151;">Đang khởi tạo...</div>
-      <div class="stream-preview" id="streamPreview">Chờ dữ liệu trả về từ AI...</div>
     </div>
 
     <div class="status-bar" id="statusBar"></div>
@@ -513,7 +353,6 @@ html_content = r'''<!DOCTYPE html>
 </div>
 
 <script>
-  // Các phần tử DOM cấu hình
   var apiKeyInput = document.getElementById('apiKeyInput');
   var clearKeyBtn = document.getElementById('clearKeyBtn');
   var modelInput = document.getElementById('modelInput');
@@ -523,7 +362,6 @@ html_content = r'''<!DOCTYPE html>
   var saveConfigBtn = document.getElementById('saveConfigBtn');
   var keyStatus = document.getElementById('keyStatus');
 
-  // Các phần tử DOM nạp tệp & tùy chọn
   var dropZone = document.getElementById('dropZone');
   var fileInput = document.getElementById('fileInput');
   var fileInfo = document.getElementById('fileInfo');
@@ -531,48 +369,24 @@ html_content = r'''<!DOCTYPE html>
   var fileNameDisplay = document.getElementById('fileNameDisplay');
   var fileSizeDisplay = document.getElementById('fileSizeDisplay');
   var clearFileBtn = document.getElementById('clearFileBtn');
+  var cancelConvertBtn = document.getElementById('cancelConvertBtn');
   var convertBtn = document.getElementById('convertBtn');
-  var cancelBtn = document.getElementById('cancelBtn');
-  var batchSizeWrap = document.getElementById('batchSizeWrap');
-  var batchSizeSelect = document.getElementById('batchSizeSelect');
-  var timeoutInput = document.getElementById('timeoutInput');
-
-  // Các phần tử DOM tiến trình & trạng thái
-  var progressPanel = document.getElementById('progressPanel');
-  var phaseBadge = document.getElementById('phaseBadge');
-  var pageProgressText = document.getElementById('pageProgressText');
-  var uploadPctText = document.getElementById('uploadPctText');
-  var charCountText = document.getElementById('charCountText');
-  var elapsedTimeText = document.getElementById('elapsedTimeText');
-  var idleTimeText = document.getElementById('idleTimeText');
-  var progressFill = document.getElementById('progressFill');
-  var phaseDetailText = document.getElementById('phaseDetailText');
-  var streamPreview = document.getElementById('streamPreview');
   var statusBar = document.getElementById('statusBar');
 
-  // Các phần tử DOM soạn thảo & xuất file
   var editor = document.getElementById('editor');
   var clearEditorBtn = document.getElementById('clearEditorBtn');
   var outputFileName = document.getElementById('outputFileName');
   var exportDocBtn = document.getElementById('exportDocBtn');
 
-  // Trạng thái tệp hiện tại
-  var currentFile = null;
+  var currentBase64 = '';
   var currentMimeType = '';
-  var currentImageBase64 = '';
-  var currentPdfArrayBuffer = null;
-  var currentPdfDoc = null;
-  var currentPdfPageCount = 0;
-
-  // Trạng thái API Key & tiến trình
   var isKeyLocked = false;
   var sessionApiKey = '';
-  var isProcessing = false;
-  var isCancelled = false;
-  var activeXhr = null;
-  var activeWatchdogTimer = null;
 
-  // Hàm lưu/đọc localStorage an toàn
+  // Biến theo dõi tiến trình Streaming & Hủy
+  var currentAbortController = null;
+  var progressTimer = null;
+
   function safeGetStorage(k) {
     try { return localStorage.getItem(k); } catch (e) { return null; }
   }
@@ -587,13 +401,9 @@ html_content = r'''<!DOCTYPE html>
     return (raw || '').trim().replace(/^models\//i, '');
   }
 
-  // Hiển thị/ẩn nút xóa (x) trong ô chọn Model
+  // Hiện/ẩn nút xóa (x) trong ô chọn Model
   function updateClearModelBtn() {
-    if (modelInput.value && modelInput.value.length > 0) {
-      clearModelBtn.classList.add('visible');
-    } else {
-      clearModelBtn.classList.remove('visible');
-    }
+    clearModelBtn.style.display = modelInput.value.length > 0 ? 'block' : 'none';
   }
 
   modelInput.addEventListener('input', updateClearModelBtn);
@@ -605,7 +415,7 @@ html_content = r'''<!DOCTYPE html>
     modelInput.focus();
   });
 
-  // Khóa cứng ô nhập API Key để chống sửa và chống copy
+  // Khóa cứng ô nhập và thay bằng chuỗi dấu sao giả để chống sửa và chống copy
   function lockApiKeyUI(realKey) {
     sessionApiKey = realKey;
     isKeyLocked = true;
@@ -614,6 +424,7 @@ html_content = r'''<!DOCTYPE html>
     clearKeyBtn.style.display = 'inline-block';
   }
 
+  // Mở khóa để nhập Key mới sau khi xóa
   function unlockApiKeyUI() {
     sessionApiKey = '';
     isKeyLocked = false;
@@ -636,16 +447,12 @@ html_content = r'''<!DOCTYPE html>
     }
   });
 
-  // Khởi tạo cấu hình từ localStorage
+  // Nạp API Key và Model đã lưu khi mở trang
   (function init() {
     var savedKey = safeGetStorage('gemini_ocr_api_key');
     var savedModel = safeGetStorage('gemini_ocr_model');
-    var savedTimeout = safeGetStorage('gemini_ocr_timeout');
     if (savedModel) {
       modelInput.value = savedModel;
-    }
-    if (savedTimeout) {
-      timeoutInput.value = savedTimeout;
     }
     updateClearModelBtn();
 
@@ -656,17 +463,8 @@ html_content = r'''<!DOCTYPE html>
     }
   })();
 
-  timeoutInput.addEventListener('change', function() {
-    var val = parseInt(timeoutInput.value, 10);
-    if (isNaN(val) || val < 15) val = 15;
-    if (val > 600) val = 600;
-    timeoutInput.value = val;
-    safeSetStorage('gemini_ocr_timeout', String(val));
-  });
-
   // Xóa API Key khỏi trình duyệt
   clearKeyBtn.addEventListener('click', function() {
-    if (isProcessing) return;
     safeRemoveStorage('gemini_ocr_api_key');
     unlockApiKeyUI();
     apiKeyInput.focus();
@@ -674,7 +472,6 @@ html_content = r'''<!DOCTYPE html>
     keyStatus.style.color = '#991b1b';
   });
 
-  // Lưu cấu hình
   saveConfigBtn.addEventListener('click', function() {
     var key = getActiveApiKey();
     var model = normalizeModelName(modelInput.value);
@@ -701,7 +498,7 @@ html_content = r'''<!DOCTYPE html>
     keyStatus.style.color = '#166534';
   });
 
-  // Tự động tải danh sách model Text-out và loại bỏ các từ khóa không phù hợp
+  // Tự động tải danh sách model thuộc nhóm Text-out (đã lọc bỏ các từ khóa không dùng)
   fetchModelsBtn.addEventListener('click', async function() {
     var key = getActiveApiKey();
     if (!key) {
@@ -723,7 +520,6 @@ html_content = r'''<!DOCTYPE html>
         throw new Error(msg);
       }
 
-      // Danh sách từ khóa cần bỏ qua (đã bổ sung banana, pro, transcribe, omni)
       var excludedKeywords = [
         'image', 'audio', 'tts', 'embedding', 'robotics', 'computer-use', 'live', 'aqa',
         'banana', 'pro', 'transcribe', 'omni'
@@ -737,11 +533,12 @@ html_content = r'''<!DOCTYPE html>
           var shortName = normalizeModelName(m.name);
           var lowerName = shortName.toLowerCase();
 
-          // Chỉ lấy model Gemini có hỗ trợ generateContent
+          // 1. Phải hỗ trợ generateContent và là dòng Gemini
           if (methods.indexOf('generateContent') === -1 || lowerName.indexOf('gemini-') !== 0) {
             continue;
           }
 
+          // 2. Bỏ qua các model chứa từ khóa bị loại trừ
           var isExcluded = false;
           for (var k = 0; k < excludedKeywords.length; k++) {
             if (lowerName.indexOf(excludedKeywords[k]) !== -1) {
@@ -757,9 +554,10 @@ html_content = r'''<!DOCTYPE html>
       }
 
       if (validModels.length === 0) {
-        throw new Error('Không tìm thấy model phù hợp sau khi lọc.');
+        throw new Error('Không tìm thấy model phù hợp nào khả dụng cho Key này.');
       }
 
+      // Sắp xếp đưa các bản mới nhất lên đầu
       validModels.sort().reverse();
 
       modelSuggestions.innerHTML = '';
@@ -772,7 +570,7 @@ html_content = r'''<!DOCTYPE html>
       modelInput.value = '';
       updateClearModelBtn();
       modelInput.focus();
-      keyStatus.textContent = 'Đã lọc được ' + validModels.length + ' model Text-out! Nhấp vào ô Mã Model để chọn.';
+      keyStatus.textContent = 'Đã lọc được ' + validModels.length + ' model! Nhấp vào ô Mã Model để chọn.';
       keyStatus.style.color = '#166534';
     } catch (err) {
       keyStatus.textContent = 'Không lấy được danh sách model: ' + err.message;
@@ -792,32 +590,11 @@ html_content = r'''<!DOCTYPE html>
     statusBar.style.display = 'none';
   }
 
-  function setPhaseUI(phaseType, badgeLabel, detailText) {
-    phaseBadge.className = 'phase-badge phase-' + phaseType;
-    phaseBadge.textContent = badgeLabel;
-    if (typeof detailText === 'string') {
-      phaseDetailText.textContent = detailText;
+  function stopProgressTimer() {
+    if (progressTimer) {
+      clearInterval(progressTimer);
+      progressTimer = null;
     }
-    progressFill.classList.remove('uploading', 'streaming');
-    if (phaseType === 'upload') progressFill.classList.add('uploading');
-    if (phaseType === 'stream') progressFill.classList.add('streaming');
-  }
-
-  function formatSize(bytes) {
-    if (bytes >= 1024 * 1024) {
-      return (bytes / 1024 / 1024).toFixed(2) + ' MB';
-    }
-    return (bytes / 1024).toFixed(1) + ' KB';
-  }
-
-  function arrayBufferToBase64(buffer) {
-    var bytes = new Uint8Array(buffer);
-    var chunkSize = 0x8000;
-    var chunks = [];
-    for (var i = 0; i < bytes.length; i += chunkSize) {
-      chunks.push(String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize)));
-    }
-    return btoa(chunks.join(''));
   }
 
   function detectMimeType(file) {
@@ -833,9 +610,14 @@ html_content = r'''<!DOCTYPE html>
     return '';
   }
 
-  // Nạp và phân tích tệp đầu vào (PDF hoặc Ảnh)
-  async function handleFile(file) {
-    if (!file || isProcessing) return;
+  function handleFile(file) {
+    if (!file) return;
+
+    var maxBytes = 18 * 1024 * 1024;
+    if (file.size > maxBytes) {
+      setStatus('Tệp quá lớn (' + (file.size / 1024 / 1024).toFixed(1) + ' MB). Bản 1 hỗ trợ tốt nhất tệp dưới 18 MB.', 'error');
+      return;
+    }
 
     var detectedMime = detectMimeType(file);
     if (!detectedMime) {
@@ -843,76 +625,33 @@ html_content = r'''<!DOCTYPE html>
       return;
     }
 
-    // Với ảnh giới hạn 18MB; với PDF có thể lớn hơn nếu tách trang được
-    var maxBytes = detectedMime === 'application/pdf' ? 50 * 1024 * 1024 : 18 * 1024 * 1024;
-    if (file.size > maxBytes) {
-      setStatus('Tệp quá lớn (' + formatSize(file.size) + '). Vui lòng chọn tệp nhỏ hơn.', 'error');
-      return;
-    }
-
     hideStatus();
-    progressPanel.style.display = 'none';
-
-    currentFile = file;
     currentMimeType = detectedMime;
-    currentImageBase64 = '';
-    currentPdfArrayBuffer = null;
-    currentPdfDoc = null;
-    currentPdfPageCount = 0;
 
     var baseName = file.name ? file.name.replace(/\.[^/.]+$/, '') : 'anh-chup-man-hinh';
     outputFileName.value = baseName + '-word';
+
     fileNameDisplay.textContent = file.name || 'Tệp dán từ bộ nhớ tạm';
+    fileSizeDisplay.textContent = (file.size / 1024).toFixed(1) + ' KB • ' + detectedMime;
 
-    if (detectedMime === 'application/pdf') {
-      imagePreview.style.display = 'none';
-      batchSizeWrap.style.display = 'inline-flex';
-      fileSizeDisplay.textContent = formatSize(file.size) + ' • Đang đếm số trang PDF...';
-      fileInfo.style.display = 'flex';
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var dataUrl = e.target.result;
+      currentBase64 = dataUrl.split(',')[1];
 
-      var reader = new FileReader();
-      reader.onload = async function(e) {
-        currentPdfArrayBuffer = e.target.result;
-        if (typeof PDFLib !== 'undefined' && PDFLib.PDFDocument) {
-          try {
-            currentPdfDoc = await PDFLib.PDFDocument.load(currentPdfArrayBuffer, { ignoreEncryption: true });
-            currentPdfPageCount = currentPdfDoc.getPageCount();
-            fileSizeDisplay.textContent = formatSize(file.size) + ' • PDF gồm ' + currentPdfPageCount + ' trang';
-            setStatus('Đã nạp tệp PDF (' + currentPdfPageCount + ' trang). Bấm "Bắt đầu trích xuất" để chạy.', 'info');
-          } catch (pdfErr) {
-            currentPdfDoc = null;
-            currentPdfPageCount = 1;
-            fileSizeDisplay.textContent = formatSize(file.size) + ' • PDF (gửi nguyên tệp)';
-            setStatus('Không thể tách trang tự động tệp PDF này (có thể do mã hóa đặc biệt). Công cụ sẽ gửi nguyên tệp.', 'warn');
-          }
-        } else {
-          currentPdfPageCount = 1;
-          fileSizeDisplay.textContent = formatSize(file.size) + ' • PDF (chế độ gửi nguyên tệp)';
-          setStatus('Đã nạp tệp PDF (thư viện tách trang chưa tải được, sẽ gửi nguyên tệp 1 lượt).', 'warn');
-        }
-      };
-      reader.onerror = function() {
-        setStatus('Không thể đọc tệp PDF từ ổ đĩa. Vui lòng kiểm tra tệp có đang bị khóa hay không.', 'error');
-      };
-      reader.readAsArrayBuffer(file);
-    } else {
-      batchSizeWrap.style.display = 'none';
-      fileSizeDisplay.textContent = formatSize(file.size) + ' • Hình ảnh (1 trang)';
-
-      var imgReader = new FileReader();
-      imgReader.onload = function(e) {
-        var dataUrl = e.target.result;
-        currentImageBase64 = dataUrl.split(',')[1];
+      if (detectedMime.indexOf('image/') === 0) {
         imagePreview.src = dataUrl;
         imagePreview.style.display = 'block';
-        fileInfo.style.display = 'flex';
-        setStatus('Đã nạp hình ảnh thành công! Bấm "Bắt đầu trích xuất" để chạy.', 'info');
-      };
-      imgReader.onerror = function() {
-        setStatus('Không thể đọc tệp ảnh từ ổ đĩa.', 'error');
-      };
-      imgReader.readAsDataURL(file);
-    }
+      } else {
+        imagePreview.style.display = 'none';
+      }
+      fileInfo.style.display = 'flex';
+      setStatus('Đã nạp tệp thành công! Hãy bấm nút "Bắt đầu trích xuất".', 'info');
+    };
+    reader.onerror = function() {
+      setStatus('Không thể đọc tệp từ ổ đĩa. Vui lòng kiểm tra xem tệp có đang bị khóa hay không.', 'error');
+    };
+    reader.readAsDataURL(file);
   }
 
   fileInput.addEventListener('change', function(e) {
@@ -944,7 +683,6 @@ html_content = r'''<!DOCTYPE html>
   });
 
   window.addEventListener('paste', function(e) {
-    if (isProcessing) return;
     var cd = e.clipboardData || window.clipboardData;
     if (!cd) return;
 
@@ -969,298 +707,24 @@ html_content = r'''<!DOCTYPE html>
   });
 
   clearFileBtn.addEventListener('click', function() {
-    if (isProcessing) return;
-    currentFile = null;
+    if (currentAbortController) {
+      currentAbortController.abort();
+    }
+    currentBase64 = '';
     currentMimeType = '';
-    currentImageBase64 = '';
-    currentPdfArrayBuffer = null;
-    currentPdfDoc = null;
-    currentPdfPageCount = 0;
     fileInput.value = '';
     fileInfo.style.display = 'none';
-    progressPanel.style.display = 'none';
     hideStatus();
   });
 
-  function cleanModelHtml(rawText) {
-    return (rawText || '')
-      .replace(/^```html\s*/i, '')
-      .replace(/^```\s*/i, '')
-      .replace(/```\s*$/i, '')
-      .trim();
-  }
-
-  function extractErrorMessage(responseText, statusCode, modelName) {
-    var errMsg = 'Lỗi HTTP ' + statusCode;
-    try {
-      var parsed = JSON.parse(responseText);
-      if (Array.isArray(parsed) && parsed[0] && parsed[0].error && parsed[0].error.message) {
-        errMsg = parsed[0].error.message;
-      } else if (parsed && parsed.error && parsed.error.message) {
-        errMsg = parsed.error.message;
-      }
-    } catch (e) {
-      if (responseText && responseText.length < 300) {
-        errMsg = responseText;
-      }
-    }
-
-    if (statusCode === 400) return 'API Key không hợp lệ hoặc tệp bị lỗi định dạng (' + errMsg + ')';
-    if (statusCode === 403) return 'API Key không có quyền truy cập model "' + modelName + '" (' + errMsg + ')';
-    if (statusCode === 404) return 'Không tìm thấy mã model "' + modelName + '". Hãy bấm "Lấy DS Model" để kiểm tra tên chính xác.';
-    if (statusCode === 429) return 'Vượt quá giới hạn RPM/RPD miễn phí của model "' + modelName + '". Vui lòng đợi 30–60 giây rồi thử lại.';
-    if (statusCode === 503) return 'Máy chủ Google AI đang quá tải tạm thời (503). Vui lòng thử lại sau ít phút.';
-    return errMsg;
-  }
-
-  // Gửi 1 lượt yêu cầu bằng XMLHttpRequest để tách riêng Upload Progress + Streaming SSE + Timeout + Cancel
-  function streamGeminiRequest(options) {
-    return new Promise(function(resolve, reject) {
-      var endpoint =
-        '[https://generativelanguage.googleapis.com/v1beta/models/](https://generativelanguage.googleapis.com/v1beta/models/)' +
-        encodeURIComponent(options.model) +
-        ':streamGenerateContent?alt=sse&key=' +
-        encodeURIComponent(options.apiKey);
-
-      var payload = JSON.stringify({
-        contents: [{
-          parts: [
-            { text: options.prompt },
-            {
-              inline_data: {
-                mime_type: options.mimeType,
-                data: options.base64Data
-              }
-            }
-          ]
-        }],
-        generationConfig: {
-          temperature: 0.1
-        }
-      });
-
-      var xhr = new XMLHttpRequest();
-      activeXhr = xhr;
-
-      var processedLen = 0;
-      var lineBuffer = '';
-      var accumulatedText = '';
-      var accumulatedThoughtChars = 0;
-      var uploadDone = false;
-      var hasReceivedChunk = false;
-      var settled = false;
-      var timedOut = false;
-
-      var requestStartTime = Date.now();
-      var lastActivityTime = Date.now();
-      var timeoutMs = options.timeoutSeconds * 1000;
-
-      function stopTimers() {
-        if (activeWatchdogTimer) {
-          clearInterval(activeWatchdogTimer);
-          activeWatchdogTimer = null;
-        }
-      }
-
-      function finishResolve(val) {
-        if (settled) return;
-        settled = true;
-        stopTimers();
-        if (activeXhr === xhr) activeXhr = null;
-        resolve(val);
-      }
-
-      function finishReject(err) {
-        if (settled) return;
-        settled = true;
-        stopTimers();
-        if (activeXhr === xhr) activeXhr = null;
-        reject(err);
-      }
-
-      function parseSseBuffer(isFinal) {
-        if (xhr.status >= 400) return;
-
-        var newData = xhr.responseText.slice(processedLen);
-        processedLen = xhr.responseText.length;
-
-        if (!newData && !isFinal) return;
-        if (newData) {
-          lastActivityTime = Date.now();
-        }
-
-        lineBuffer += newData;
-        var lines = lineBuffer.split(/\r?\n/);
-        lineBuffer = isFinal ? '' : lines.pop();
-
-        for (var i = 0; i < lines.length; i++) {
-          var line = lines[i].trim();
-          if (!line || line.indexOf('data:') !== 0) continue;
-          var jsonStr = line.slice(5).trim();
-          if (!jsonStr || jsonStr === '[DONE]') continue;
-
-          try {
-            var chunkObj = JSON.parse(jsonStr);
-            if (chunkObj.error) {
-              finishReject(new Error(chunkObj.error.message || 'Lỗi từ máy chủ Gemini.'));
-              try { xhr.abort(); } catch (e) {}
-              return;
-            }
-            var candidates = chunkObj.candidates;
-            if (candidates && candidates[0] && candidates[0].content && candidates[0].content.parts) {
-              var parts = candidates[0].content.parts;
-              for (var p = 0; p < parts.length; p++) {
-                var part = parts[p];
-                if (!part.text) continue;
-                if (part.thought) {
-                  accumulatedThoughtChars += part.text.length;
-                  if (options.onThought) {
-                    options.onThought(accumulatedThoughtChars);
-                  }
-                } else {
-                  hasReceivedChunk = true;
-                  accumulatedText += part.text;
-                  if (options.onTextChunk) {
-                    options.onTextChunk(part.text, accumulatedText);
-                  }
-                }
-              }
-            }
-          } catch (parseErr) {
-            // Bỏ qua dòng không phải JSON hoàn chỉnh
-          }
-        }
-      }
-
-      // Bộ đếm thời gian chạy mỗi 500ms & kiểm tra Request Timeout
-      activeWatchdogTimer = setInterval(function() {
-        var now = Date.now();
-        var totalSec = Math.floor((now - options.jobStartTime) / 1000);
-        var idleSec = Math.floor((now - lastActivityTime) / 1000);
-
-        elapsedTimeText.textContent = totalSec + 's';
-        idleTimeText.textContent = idleSec + 's / ' + options.timeoutSeconds + 's';
-
-        if (now - lastActivityTime >= timeoutMs) {
-          timedOut = true;
-          try { xhr.abort(); } catch (e) {}
-          var stageLabel = !uploadDone
-            ? 'trong lúc tải tệp lên'
-            : (hasReceivedChunk ? 'giữa chừng khi đang nhận dữ liệu' : 'khi chờ AI phản hồi đầu tiên');
-          finishReject(new Error(
-            'Request Timeout: Quá ' + options.timeoutSeconds + ' giây không có phản hồi ' +
-            stageLabel + ' (' + options.pageLabel + '). Hãy thử lại, tăng thời gian Timeout hoặc chọn model nhanh hơn.'
-          ));
-        }
-      }, 500);
-
-      // Giai đoạn 1: Theo dõi tải tệp lên máy chủ AI
-      xhr.upload.onprogress = function(e) {
-        lastActivityTime = Date.now();
-        if (e.lengthComputable) {
-          var pct = Math.min(100, Math.round((e.loaded / e.total) * 100));
-          if (options.onUploadProgress) {
-            options.onUploadProgress(pct, e.loaded, e.total);
-          }
-        }
-      };
-
-      xhr.upload.onload = function() {
-        uploadDone = true;
-        lastActivityTime = Date.now();
-        if (options.onUploadComplete) {
-          options.onUploadComplete();
-        }
-      };
-
-      // Giai đoạn 2: Nhận dữ liệu Streaming SSE từ AI
-      xhr.onprogress = function() {
-        parseSseBuffer(false);
-      };
-
-      xhr.onload = function() {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          parseSseBuffer(true);
-          if (!accumulatedText.trim()) {
-            finishReject(new Error('AI không trả về nội dung ở ' + options.pageLabel + ' (có thể trang trống hoặc bị bộ lọc an toàn chặn).'));
-            return;
-          }
-          finishResolve(accumulatedText);
-        } else {
-          finishReject(new Error(extractErrorMessage(xhr.responseText, xhr.status, options.model)));
-        }
-      };
-
-      xhr.onerror = function() {
-        finishReject(new Error('Lỗi kết nối mạng khi gửi yêu cầu đến Google AI. Vui lòng kiểm tra đường truyền hoặc tường lửa.'));
-      };
-
-      xhr.onabort = function() {
-        if (timedOut) return;
-        if (isCancelled) {
-          finishReject(new Error('USER_CANCELLED'));
-        } else {
-          finishReject(new Error('Yêu cầu đã bị ngắt kết nối đột ngột.'));
-        }
-      };
-
-      xhr.open('POST', endpoint, true);
-      xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.send(payload);
-    });
-  }
-
-  // Nút Hủy quá trình xử lý
-  cancelBtn.addEventListener('click', function() {
-    if (!isProcessing) return;
-    isCancelled = true;
-    cancelBtn.disabled = true;
-    setPhaseUI('error', 'Đang hủy...', 'Đang ngắt kết nối với máy chủ AI...');
-    if (activeXhr) {
-      try { activeXhr.abort(); } catch (e) {}
+  // Hủy quá trình trích xuất đang chạy
+  cancelConvertBtn.addEventListener('click', function() {
+    if (currentAbortController) {
+      currentAbortController.abort();
     }
   });
 
-  function setBusyState(busy) {
-    isProcessing = busy;
-    convertBtn.disabled = busy;
-    clearFileBtn.disabled = busy;
-    clearKeyBtn.disabled = busy;
-    fetchModelsBtn.disabled = busy;
-    saveConfigBtn.disabled = busy;
-    batchSizeSelect.disabled = busy;
-    timeoutInput.disabled = busy;
-    fileInput.disabled = busy;
-
-    if (busy) {
-      cancelBtn.style.display = 'inline-block';
-      cancelBtn.disabled = false;
-    } else {
-      cancelBtn.style.display = 'none';
-      cancelBtn.disabled = false;
-    }
-  }
-
-  // Tạo câu lệnh trích xuất tiếng Việt chuẩn hành chính
-  function buildPrompt(pageLabel, totalPages) {
-    var pageNote = totalPages > 1
-      ? ('Đây là ' + pageLabel + ' trong tổng số ' + totalPages + ' trang của tài liệu. Hãy giữ liền mạch định dạng.\n')
-      : '';
-    return (
-      'Bạn là chuyên gia số hóa và bóc tách văn bản hành chính tiếng Việt chính xác tuyệt đối.\n' +
-      pageNote +
-      'Nhiệm vụ: Trích xuất TOÀN BỘ nội dung chữ và bảng biểu từ tệp đính kèm sang mã HTML sạch để mở trong Microsoft Word.\n' +
-      'Quy tắc bắt buộc:\n' +
-      '1. Đọc chuẩn xác 100% chính tả tiếng Việt, đặc biệt lưu ý phân biệt dấu hỏi (?), dấu ngã (~), dấu nặng (.), tên riêng, số hiệu văn bản, ngày tháng năm và các con số.\n' +
-      '2. Giữ nguyên cấu trúc văn bản: dùng <p> cho đoạn văn, <b> cho chữ in đậm, <i> cho chữ in nghiêng, <ul>/<ol> cho danh sách.\n' +
-      '3. Với bảng biểu: dùng thẻ <table>, <tr>, <th>, <td>. Giữ đúng các ô gộp cột (colspan) và gộp dòng (rowspan) nếu có.\n' +
-      '4. Với phần quốc hiệu tiêu ngữ hoặc bố cục 2 cột đầu trang công văn, có thể dùng <table> không viền (style="border:none;") để giữ đúng vị trí trái/phải.\n' +
-      '5. TUYỆT ĐỐI KHÔNG tóm tắt, KHÔNG bỏ sót nội dung, KHÔNG thêm lời chào hay giải thích.\n' +
-      '6. Chỉ trả về đoạn mã HTML bên trong nội dung (không bao gồm thẻ <html>, <head>, <body> và không bọc trong dấu ```html).'
-    );
-  }
-
-  // Nút Bắt đầu trích xuất
+  // Trích xuất theo luồng Streaming (SSE) kèm bộ đếm ký tự & thời gian thực
   convertBtn.addEventListener('click', async function() {
     var apiKey = getActiveApiKey();
     var model = normalizeModelName(modelInput.value);
@@ -1275,227 +739,164 @@ html_content = r'''<!DOCTYPE html>
       modelInput.focus();
       return;
     }
-    if (!currentFile) {
+    if (!currentBase64) {
       setStatus('Vui lòng chọn tệp PDF hoặc hình ảnh trước.', 'error');
       return;
     }
-
-    var timeoutSeconds = parseInt(timeoutInput.value, 10);
-    if (isNaN(timeoutSeconds) || timeoutSeconds < 15) timeoutSeconds = 90;
 
     modelInput.value = model;
     updateClearModelBtn();
     safeSetStorage('gemini_ocr_api_key', apiKey);
     safeSetStorage('gemini_ocr_model', model);
-    safeSetStorage('gemini_ocr_timeout', String(timeoutSeconds));
     if (!isKeyLocked) {
       lockApiKeyUI(apiKey);
     }
 
-    // Lập danh sách các chặng xử lý (trang x/xx)
-    var jobs = [];
-    var totalPages = 1;
+    var endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/' +
+      encodeURIComponent(model) + ':streamGenerateContent?alt=sse&key=' + encodeURIComponent(apiKey);
 
-    if (currentMimeType === 'application/pdf') {
-      var batchSize = parseInt(batchSizeSelect.value, 10);
-      if (currentPdfDoc && currentPdfPageCount > 1 && batchSize > 0) {
-        totalPages = currentPdfPageCount;
-        for (var start = 0; start < totalPages; start += batchSize) {
-          var end = Math.min(start + batchSize, totalPages);
-          var indices = [];
-          for (var idx = start; idx < end; idx++) {
-            indices.push(idx);
-          }
-          var label = (start + 1 === end)
-            ? ('Trang ' + (start + 1) + '/' + totalPages)
-            : ('Trang ' + (start + 1) + '–' + end + '/' + totalPages);
-          jobs.push({
-            type: 'pdf-split',
-            indices: indices,
-            endPage: end,
-            label: label
-          });
-        }
+    var promptInstruction =
+      'Bạn là chuyên gia số hóa và bóc tách văn bản hành chính tiếng Việt chính xác tuyệt đối.\n' +
+      'Nhiệm vụ: Trích xuất TOÀN BỘ nội dung chữ và bảng biểu từ tệp đính kèm sang mã HTML sạch để mở trong Microsoft Word.\n' +
+      'Quy tắc bắt buộc:\n' +
+      '1. Đọc chuẩn xác 100% chính tả tiếng Việt, đặc biệt lưu ý phân biệt dấu hỏi (?), dấu ngã (~), dấu nặng (.), tên riêng, số hiệu văn bản, ngày tháng năm và các con số.\n' +
+      '2. Giữ nguyên cấu trúc văn bản: dùng <p> cho đoạn văn, <b> cho chữ in đậm, <i> cho chữ in nghiêng, <ul>/<ol> cho danh sách.\n' +
+      '3. Với bảng biểu: dùng thẻ <table>, <tr>, <th>, <td>. Giữ đúng các ô gộp cột (colspan) và gộp dòng (rowspan) nếu có.\n' +
+      '4. Với phần quốc hiệu tiêu ngữ hoặc bố cục 2 cột đầu trang công văn, có thể dùng <table> không viền (style="border:none;") để giữ đúng vị trí trái/phải.\n' +
+      '5. TUYỆT ĐỐI KHÔNG tóm tắt, KHÔNG bỏ sót nội dung, KHÔNG thêm lời chào hay giải thích.\n' +
+      '6. Chỉ trả về đoạn mã HTML bên trong nội dung (không bao gồm thẻ <html>, <head>, <body> và không bọc trong dấu ```html).';
+
+    convertBtn.disabled = true;
+    clearFileBtn.disabled = true;
+    cancelConvertBtn.style.display = 'inline-block';
+
+    currentAbortController = new AbortController();
+    var startTime = Date.now();
+    var receivedChars = 0;
+
+    function updateStreamingStatus() {
+      var elapsedSec = Math.floor((Date.now() - startTime) / 1000);
+      if (receivedChars === 0) {
+        setStatus('Đang tải tài liệu lên và chờ model "' + model + '" phân tích... (' + elapsedSec + ' giây)', 'info');
       } else {
-        totalPages = currentPdfPageCount || 1;
-        jobs.push({
-          type: 'pdf-whole',
-          endPage: totalPages,
-          label: totalPages > 1 ? ('Toàn bộ ' + totalPages + ' trang (1/1)') : 'Trang 1/1'
-        });
+        setStatus('Đang nhận dữ liệu từ "' + model + '": ' + receivedChars.toLocaleString('vi-VN') + ' ký tự • ' + elapsedSec + ' giây', 'info');
       }
-    } else {
-      totalPages = 1;
-      jobs.push({
-        type: 'image',
-        endPage: 1,
-        label: 'Trang 1/1 (Hình ảnh)'
-      });
     }
 
-    isCancelled = false;
-    setBusyState(true);
-    hideStatus();
-    progressPanel.style.display = 'block';
-    editor.innerHTML = '';
-
-    var jobStartTime = Date.now();
-    var totalReceivedChars = 0;
-    var completedPages = 0;
-    var combinedHtmlParts = [];
-
-    elapsedTimeText.textContent = '0s';
-    idleTimeText.textContent = '0s / ' + timeoutSeconds + 's';
-    charCountText.textContent = '0';
-    uploadPctText.textContent = '0%';
-    progressFill.style.width = '0%';
-    streamPreview.textContent = 'Đang khởi tạo tiến trình...';
+    updateStreamingStatus();
+    progressTimer = setInterval(updateStreamingStatus, 500);
 
     try {
-      for (var j = 0; j < jobs.length; j++) {
-        if (isCancelled) {
-          throw new Error('USER_CANCELLED');
-        }
-
-        var job = jobs[j];
-        var baseProgressPct = Math.round((j / jobs.length) * 100);
-        var nextProgressPct = Math.round(((j + 1) / jobs.length) * 100);
-
-        pageProgressText.textContent = 'Đang xử lý: ' + job.label;
-        uploadPctText.textContent = '0%';
-        setPhaseUI('prep', 'Chuẩn bị dữ liệu', 'Đang chuẩn bị ' + job.label + '...');
-        progressFill.style.width = Math.max(2, baseProgressPct) + '%';
-
-        // Chuẩn bị chuỗi Base64 cho chặng hiện tại
-        var base64Payload = '';
-        if (job.type === 'pdf-split') {
-          var subDoc = await PDFLib.PDFDocument.create();
-          var copiedPages = await subDoc.copyPages(currentPdfDoc, job.indices);
-          for (var cp = 0; cp < copiedPages.length; cp++) {
-            subDoc.addPage(copiedPages[cp]);
+      var response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: currentAbortController.signal,
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: promptInstruction },
+              {
+                inline_data: {
+                  mime_type: currentMimeType,
+                  data: currentBase64
+                }
+              }
+            ]
+          }],
+          generationConfig: {
+            temperature: 0.1
           }
-          base64Payload = await subDoc.saveAsBase64();
-        } else if (job.type === 'pdf-whole') {
-          base64Payload = arrayBufferToBase64(currentPdfArrayBuffer);
-        } else {
-          base64Payload = currentImageBase64;
-        }
+        })
+      });
 
-        if (isCancelled) {
-          throw new Error('USER_CANCELLED');
-        }
-
-        // Bắt đầu giai đoạn tải tệp lên
-        setPhaseUI('upload', 'Đang tải tệp lên', 'Đang gửi ' + job.label + ' lên máy chủ Google AI...');
-        streamPreview.textContent = '[' + job.label + '] Đang tải dữ liệu lên máy chủ...';
-
-        var pageReceivedChars = 0;
-        var promptText = buildPrompt(job.label, totalPages);
-
-        var rawPageText = await streamGeminiRequest({
-          apiKey: apiKey,
-          model: model,
-          mimeType: currentMimeType,
-          base64Data: base64Payload,
-          prompt: promptText,
-          pageLabel: job.label,
-          timeoutSeconds: timeoutSeconds,
-          jobStartTime: jobStartTime,
-
-          onUploadProgress: function(pct, loaded, total) {
-            uploadPctText.textContent = pct + '%';
-            setPhaseUI(
-              'upload',
-              'Đang tải tệp lên (' + pct + '%)',
-              'Đang tải ' + job.label + ': ' + formatSize(loaded) + ' / ' + formatSize(total)
-            );
-          },
-
-          onUploadComplete: function() {
-            uploadPctText.textContent = '100%';
-            var midPct = baseProgressPct + Math.round((nextProgressPct - baseProgressPct) * 0.25);
-            progressFill.style.width = midPct + '%';
-            setPhaseUI(
-              'wait',
-              'AI đang phân tích',
-              'Đã tải xong ' + job.label + '. Đang chờ model "' + model + '" xử lý và trả ký tự đầu tiên...'
-            );
-            streamPreview.textContent = '[' + job.label + '] Đã tải tệp lên 100%. Đang chờ AI phân tích...';
-          },
-
-          onThought: function(thoughtChars) {
-            setPhaseUI(
-              'wait',
-              'AI đang suy luận',
-              'Model đang phân tích sâu ' + job.label + ' (' + thoughtChars.toLocaleString('vi-VN') + ' ký tự suy luận)...'
-            );
-          },
-
-          onTextChunk: function(chunk, fullPageSoFar) {
-            pageReceivedChars = fullPageSoFar.length;
-            var currentTotalChars = totalReceivedChars + pageReceivedChars;
-            charCountText.textContent = currentTotalChars.toLocaleString('vi-VN');
-
-            var streamPct = baseProgressPct + Math.round((nextProgressPct - baseProgressPct) * 0.75);
-            progressFill.style.width = streamPct + '%';
-            setPhaseUI(
-              'stream',
-              'Đang nhận ký tự (Streaming)',
-              'Đang nhận nội dung ' + job.label + ' (' + pageReceivedChars.toLocaleString('vi-VN') + ' ký tự ở chặng này)...'
-            );
-
-            // Hiển thị đoạn ký tự mới nhất đang chảy về để xác nhận trực quan
-            var snippet = fullPageSoFar.length > 600
-              ? ('...\n' + fullPageSoFar.slice(-600))
-              : fullPageSoFar;
-            streamPreview.textContent = '[' + job.label + ']\n' + snippet;
-            streamPreview.scrollTop = streamPreview.scrollHeight;
+      if (!response.ok) {
+        var errText = await response.text();
+        var errMsg = 'Lỗi HTTP ' + response.status;
+        try {
+          var errJson = JSON.parse(errText);
+          if (errJson && errJson.error && errJson.error.message) {
+            errMsg = errJson.error.message;
           }
-        });
+        } catch (parseErr) {}
 
-        // Hoàn tất chặng hiện tại -> làm sạch HTML và đổ ngay vào khung Word
-        totalReceivedChars += rawPageText.length;
-        charCountText.textContent = totalReceivedChars.toLocaleString('vi-VN');
-
-        var cleanedPageHtml = cleanModelHtml(rawPageText);
-        combinedHtmlParts.push(cleanedPageHtml);
-        editor.innerHTML = combinedHtmlParts.join('\n');
-        editor.scrollTop = editor.scrollHeight;
-
-        completedPages = job.endPage;
-        progressFill.style.width = nextProgressPct + '%';
+        if (response.status === 400) errMsg = 'API Key không hợp lệ hoặc tệp bị lỗi định dạng (' + errMsg + ')';
+        if (response.status === 404) errMsg = 'Không tìm thấy mã model "' + model + '". Hãy bấm "Lấy DS Model" để kiểm tra tên chính xác.';
+        if (response.status === 429) errMsg = 'Vượt quá giới hạn tốc độ gọi miễn phí. Vui lòng đợi 30 giây rồi bấm thử lại.';
+        throw new Error(errMsg);
       }
 
-      var totalElapsed = Math.max(1, Math.round((Date.now() - jobStartTime) / 1000));
-      elapsedTimeText.textContent = totalElapsed + 's';
-      pageProgressText.textContent = 'Hoàn tất: ' + completedPages + '/' + totalPages + ' trang';
-      setPhaseUI('stream', 'Hoàn tất 100%', 'Đã trích xuất xong toàn bộ ' + completedPages + '/' + totalPages + ' trang trong ' + totalElapsed + ' giây.');
-      progressFill.style.width = '100%';
-      setStatus('Trích xuất hoàn tất (' + totalReceivedChars.toLocaleString('vi-VN') + ' ký tự trong ' + totalElapsed + ' giây)! Hãy kiểm tra bên dưới và bấm tải file Word.', 'success');
+      if (!response.body || !response.body.getReader) {
+        throw new Error('Trình duyệt không hỗ trợ đọc luồng dữ liệu trực tiếp.');
+      }
+
+      var reader = response.body.getReader();
+      var decoder = new TextDecoder('utf-8');
+      var sseBuffer = '';
+      var fullRawText = '';
+
+      while (true) {
+        var step = await reader.read();
+        if (step.done) break;
+
+        sseBuffer += decoder.decode(step.value, { stream: true });
+        var lines = sseBuffer.split('\n');
+        // Giữ lại dòng cuối chưa hoàn chỉnh cho lần đọc tiếp theo
+        sseBuffer = lines.pop();
+
+        for (var i = 0; i < lines.length; i++) {
+          var line = lines[i].trim();
+          if (line.indexOf('data:') !== 0) continue;
+
+          var jsonStr = line.slice(5).trim();
+          if (!jsonStr || jsonStr === '[DONE]') continue;
+
+          try {
+            var chunk = JSON.parse(jsonStr);
+            if (chunk.candidates && chunk.candidates[0] && chunk.candidates[0].content && chunk.candidates[0].content.parts) {
+              var parts = chunk.candidates[0].content.parts;
+              for (var p = 0; p < parts.length; p++) {
+                if (parts[p].text) {
+                  fullRawText += parts[p].text;
+                  receivedChars = fullRawText.length;
+                }
+              }
+            }
+          } catch (chunkErr) {
+            // Bỏ qua các gói tin mảnh chưa đủ cú pháp JSON
+          }
+        }
+        updateStreamingStatus();
+      }
+
+      if (!fullRawText.trim()) {
+        throw new Error('AI không trả về nội dung (có thể tệp bị trống hoặc bị bộ lọc an toàn chặn).');
+      }
+
+      var cleanHtml = fullRawText
+        .replace(/^```html\s*/i, '')
+        .replace(/^```\s*/i, '')
+        .replace(/```\s*$/i, '')
+        .trim();
+
+      var totalSec = ((Date.now() - startTime) / 1000).toFixed(1);
+      editor.innerHTML = cleanHtml;
+      setStatus('Trích xuất hoàn tất (' + receivedChars.toLocaleString('vi-VN') + ' ký tự trong ' + totalSec + ' giây)! Hãy kiểm tra nhanh bên dưới và bấm tải file Word.', 'success');
 
     } catch (err) {
-      if (err && err.message === 'USER_CANCELLED') {
-        setPhaseUI('error', 'Đã hủy', 'Người dùng đã dừng quá trình xử lý.');
-        pageProgressText.textContent = 'Đã dừng tại ' + completedPages + '/' + totalPages + ' trang';
-        var keepNote = completedPages > 0
-          ? ' Nội dung ' + completedPages + ' trang đã xong vẫn được giữ nguyên trong khung soạn thảo bên dưới.'
-          : '';
-        setStatus('Đã hủy quá trình trích xuất.' + keepNote, 'warn');
+      if (err && err.name === 'AbortError') {
+        setStatus('Đã hủy quá trình trích xuất theo yêu cầu.', 'info');
       } else {
-        var msg = (err && err.message) ? err.message : 'Lỗi không xác định.';
-        var isTimeout = msg.indexOf('Request Timeout') === 0;
-        setPhaseUI('error', isTimeout ? 'Request Timeout' : 'Lỗi xử lý', msg);
-        var partialNote = completedPages > 0
-          ? ' (Đã giữ lại ' + completedPages + '/' + totalPages + ' trang xử lý xong ở khung bên dưới).'
-          : '';
-        setStatus(msg + partialNote, 'error');
+        setStatus('Lỗi xử lý: ' + err.message, 'error');
       }
     } finally {
-      setBusyState(false);
+      stopProgressTimer();
+      currentAbortController = null;
+      convertBtn.disabled = false;
+      clearFileBtn.disabled = false;
+      cancelConvertBtn.style.display = 'none';
     }
   });
 
-  // Thanh công cụ định dạng nhanh
   function formatDoc(cmd) {
     document.execCommand(cmd, false, null);
     editor.focus();
@@ -1506,7 +907,6 @@ html_content = r'''<!DOCTYPE html>
     editor.focus();
   });
 
-  // Xuất file .doc chuẩn khổ A4 tương thích Microsoft Word
   exportDocBtn.addEventListener('click', function() {
     var contentHtml = editor.innerHTML.trim();
     if (!contentHtml) {
@@ -1556,19 +956,3 @@ html_content = r'''<!DOCTYPE html>
 </script>
 </body>
 </html>
-'''
-
-output_path = "index.html"
-with open(output_path, "w", encoding="utf-8") as f:
-    f.write(html_content)
-
-# Kiểm tra nhanh các ID được tham chiếu bằng getElementById đều tồn tại trong HTML
-import re
-ids_in_html = set(re.findall(r'id="([^"]+)"', html_content))
-ids_in_js = set(re.findall(r"getElementById\('([^']+)'\)", html_content))
-missing_ids = ids_in_js - ids_in_html
-
-print("Saved:", output_path)
-print("File size (bytes):", len(html_content.encode("utf-8")))
-print("Missing DOM IDs:", missing_ids)
-print("Excluded keywords check:", all(kw in html_content for kw in ['banana', 'pro', 'transcribe', 'omni']))
