@@ -60,6 +60,19 @@
       flex: 1;
       min-width: 220px;
     }
+    /* Chống bôi đen, copy và khóa chỉnh sửa cho ô API Key */
+    #apiKeyInput {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+    #apiKeyInput:disabled {
+      background-color: #e5e7eb;
+      color: #6b7280;
+      border-color: #d1d5db;
+      cursor: not-allowed;
+    }
     button {
       padding: 8px 14px;
       border: 1px solid #d1d5db;
@@ -92,6 +105,14 @@
     }
     .btn-success:hover:not(:disabled) {
       background: #15803d;
+    }
+    .btn-danger {
+      background: #dc2626;
+      color: #ffffff;
+      border-color: #b91c1c;
+    }
+    .btn-danger:hover:not(:disabled) {
+      background: #b91c1c;
     }
 
     /* Khung kéo thả có input phủ kín bề mặt để tương thích 100% Windows 7 */
@@ -211,8 +232,17 @@
     <h2>1. Cấu hình Gemini API & Model</h2>
     <div class="row">
       <span class="field-label">API Key:</span>
-      <input type="password" id="apiKeyInput" placeholder="Dán mã Gemini API Key của bạn vào đây..." autocomplete="off">
-      <button type="button" id="toggleKeyBtn">Hiện</button>
+      <input
+        type="password"
+        id="apiKeyInput"
+        placeholder="Dán mã Gemini API Key của bạn vào đây..."
+        autocomplete="off"
+        oncopy="return false;"
+        oncut="return false;"
+        oncontextmenu="return false;"
+        ondragstart="return false;"
+      >
+      <button type="button" class="btn-danger" id="clearKeyBtn" style="display:none;" title="Xóa API Key khỏi trình duyệt để nhập mã mới">Xóa Key</button>
     </div>
     <div class="row">
       <span class="field-label">Mã Model:</span>
@@ -225,7 +255,7 @@
       <button type="button" id="fetchModelsBtn" title="Lấy danh sách model khả dụng từ API Key">Lấy DS Model</button>
       <button type="button" class="btn-primary" id="saveConfigBtn">Lưu cấu hình</button>
     </div>
-    <div class="hint" id="keyStatus">Trạng thái: Sẵn sàng hoạt động. Bạn có thể gõ trực tiếp mã model mới hoặc bấm "Lấy DS Model" để chọn.</div>
+    <div class="hint" id="keyStatus">Trạng thái: Chưa lưu API Key. Dán Key vào ô trên và bấm "Lưu cấu hình" để khóa bảo vệ.</div>
   </div>
 
   <!-- 2. NẠP TỆP ĐẦU VÀO -->
@@ -281,7 +311,7 @@
 
 <script>
   var apiKeyInput = document.getElementById('apiKeyInput');
-  var toggleKeyBtn = document.getElementById('toggleKeyBtn');
+  var clearKeyBtn = document.getElementById('clearKeyBtn');
   var modelInput = document.getElementById('modelInput');
   var modelSuggestions = document.getElementById('modelSuggestions');
   var fetchModelsBtn = document.getElementById('fetchModelsBtn');
@@ -305,6 +335,8 @@
 
   var currentBase64 = '';
   var currentMimeType = '';
+  var isKeyLocked = false;
+  var sessionApiKey = '';
 
   function safeGetStorage(k) {
     try { return localStorage.getItem(k); } catch (e) { return null; }
@@ -312,42 +344,74 @@
   function safeSetStorage(k, v) {
     try { localStorage.setItem(k, v); return true; } catch (e) { return false; }
   }
+  function safeRemoveStorage(k) {
+    try { localStorage.removeItem(k); } catch (e) {}
+  }
 
   function normalizeModelName(raw) {
     return (raw || '').trim().replace(/^models\//i, '');
   }
 
+  // Khóa cứng ô nhập và thay bằng chuỗi dấu sao giả để chống sửa và chống copy
+  function lockApiKeyUI(realKey) {
+    sessionApiKey = realKey;
+    isKeyLocked = true;
+    apiKeyInput.value = '****************************************';
+    apiKeyInput.disabled = true;
+    clearKeyBtn.style.display = 'inline-block';
+  }
+
+  // Mở khóa để nhập Key mới sau khi xóa
+  function unlockApiKeyUI() {
+    sessionApiKey = '';
+    isKeyLocked = false;
+    apiKeyInput.disabled = false;
+    apiKeyInput.value = '';
+    clearKeyBtn.style.display = 'none';
+  }
+
+  function getActiveApiKey() {
+    if (isKeyLocked) {
+      return safeGetStorage('gemini_ocr_api_key') || sessionApiKey;
+    }
+    return apiKeyInput.value.trim();
+  }
+
+  // Chặn phím tắt copy/cut trên ô API Key
+  apiKeyInput.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C' || e.key === 'x' || e.key === 'X')) {
+      e.preventDefault();
+    }
+  });
+
   // Nạp API Key và Model đã lưu khi mở trang
   (function init() {
     var savedKey = safeGetStorage('gemini_ocr_api_key');
     var savedModel = safeGetStorage('gemini_ocr_model');
-    if (savedKey) {
-      apiKeyInput.value = savedKey;
-    }
     if (savedModel) {
       modelInput.value = savedModel;
     }
-    if (savedKey || savedModel) {
-      keyStatus.textContent = 'Đã nạp cấu hình từ bộ nhớ trình duyệt (Model hiện tại: ' + modelInput.value + ').';
+    if (savedKey) {
+      lockApiKeyUI(savedKey);
+      keyStatus.textContent = 'API Key đã được lưu và khóa bảo vệ (không thể xem/sửa/copy). Model hiện tại: ' + modelInput.value;
       keyStatus.style.color = '#166534';
     }
   })();
 
-  toggleKeyBtn.addEventListener('click', function() {
-    if (apiKeyInput.type === 'password') {
-      apiKeyInput.type = 'text';
-      toggleKeyBtn.textContent = 'Ẩn';
-    } else {
-      apiKeyInput.type = 'password';
-      toggleKeyBtn.textContent = 'Hiện';
-    }
+  // Xóa API Key khỏi trình duyệt
+  clearKeyBtn.addEventListener('click', function() {
+    safeRemoveStorage('gemini_ocr_api_key');
+    unlockApiKeyUI();
+    apiKeyInput.focus();
+    keyStatus.textContent = 'Đã xóa sạch API Key khỏi trình duyệt. Bạn có thể dán mã Key mới.';
+    keyStatus.style.color = '#991b1b';
   });
 
   saveConfigBtn.addEventListener('click', function() {
-    var key = apiKeyInput.value.trim();
+    var key = getActiveApiKey();
     var model = normalizeModelName(modelInput.value);
     if (!key) {
-      alert('Vui lòng nhập mã API Key trước khi lưu.');
+      alert('Vui lòng dán mã API Key trước khi lưu.');
       apiKeyInput.focus();
       return;
     }
@@ -359,17 +423,19 @@
     modelInput.value = model;
     var ok = safeSetStorage('gemini_ocr_api_key', key);
     safeSetStorage('gemini_ocr_model', model);
+    lockApiKeyUI(key);
+
     keyStatus.textContent = ok
-      ? 'Đã lưu API Key và Model (' + model + ') thành công!'
-      : 'Đã nhận cấu hình cho phiên này (trình duyệt đang chặn lưu tự động).';
+      ? 'Đã lưu và khóa bảo vệ API Key thành công! (Model: ' + model + ')'
+      : 'Đã khóa API Key cho phiên này (Model: ' + model + ').';
     keyStatus.style.color = '#166534';
   });
 
   // Tự động tải danh sách model đang hỗ trợ generateContent từ Google AI
   fetchModelsBtn.addEventListener('click', async function() {
-    var key = apiKeyInput.value.trim();
+    var key = getActiveApiKey();
     if (!key) {
-      alert('Vui lòng nhập API Key trước để tải danh sách model.');
+      alert('Vui lòng dán API Key trước để tải danh sách model.');
       apiKeyInput.focus();
       return;
     }
@@ -411,7 +477,6 @@
         modelSuggestions.appendChild(opt);
       }
 
-      // Xóa trắng ô nhập để người dùng nhấp vào thấy ngay danh sách gợi ý
       modelInput.value = '';
       modelInput.focus();
       keyStatus.textContent = 'Đã tải ' + validModels.length + ' model! Nhấp vào ô Mã Model hoặc gõ "gemini" để chọn.';
@@ -552,7 +617,7 @@
   });
 
   convertBtn.addEventListener('click', async function() {
-    var apiKey = apiKeyInput.value.trim();
+    var apiKey = getActiveApiKey();
     var model = normalizeModelName(modelInput.value);
 
     if (!apiKey) {
@@ -573,6 +638,9 @@
     modelInput.value = model;
     safeSetStorage('gemini_ocr_api_key', apiKey);
     safeSetStorage('gemini_ocr_model', model);
+    if (!isKeyLocked) {
+      lockApiKeyUI(apiKey);
+    }
 
     var endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent?key=' + encodeURIComponent(apiKey);
 
