@@ -115,68 +115,131 @@
       background: #b91c1c;
     }
 
-    /* Khung trạng thái quyền dùng & thanh lượng sử dụng dưới ô Model */
-    .model-status-box {
-      margin-top: 8px;
+    /* Khu vực thẻ hiển thị quyền sử dụng từng Model */
+    .model-access-box {
+      margin-top: 10px;
       margin-left: 95px;
-      padding: 8px 10px;
+      padding: 10px 12px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 5px;
+      display: none;
+    }
+    .model-access-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 6px;
+    }
+    .model-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .model-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 14px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .model-chip:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    }
+    .chip-ok {
+      background: #dcfce7;
+      color: #166534;
+      border-color: #86efac;
+    }
+    .chip-busy {
+      background: #fef3c7;
+      color: #92400e;
+      border-color: #fcd34d;
+    }
+    .chip-denied {
+      background: #fee2e2;
+      color: #991b1b;
+      border-color: #fca5a5;
+      opacity: 0.75;
+    }
+    .chip-active {
+      outline: 2px solid #2563eb;
+      outline-offset: 1px;
+    }
+
+    /* Thanh trạng thái lượng sử dụng nằm dưới Model */
+    .usage-box {
+      margin-top: 10px;
+      margin-left: 95px;
+      padding: 10px 12px;
       background: #f9fafb;
       border: 1px solid #e5e7eb;
-      border-radius: 4px;
-      font-size: 12px;
+      border-radius: 5px;
     }
-    @media (max-width: 600px) {
-      .model-status-box {
-        margin-left: 0;
-      }
-    }
-    .model-status-header {
+    .usage-header {
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
+      font-size: 12.5px;
+      color: #374151;
       margin-bottom: 6px;
     }
-    .badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-weight: 600;
-      font-size: 11px;
+    .usage-numbers strong {
+      color: #111827;
     }
-    .badge-checking { background: #e2e8f0; color: #334155; }
-    .badge-ok       { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-    .badge-locked   { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-    .badge-limit    { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
-
-    .usage-meta {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: #4b5563;
-    }
-    .btn-mini {
-      padding: 1px 6px;
-      font-size: 11px;
-      font-weight: normal;
-      background: #ffffff;
-      border: 1px solid #d1d5db;
-      border-radius: 3px;
-      color: #374151;
-    }
-    .quota-bar-bg {
+    .progress-track {
       width: 100%;
-      height: 6px;
+      height: 10px;
       background: #e5e7eb;
       border-radius: 999px;
       overflow: hidden;
     }
-    .quota-bar-fill {
+    .progress-fill {
       height: 100%;
       width: 0%;
-      background: #22c55e;
-      transition: width 0.25s ease, background-color 0.25s ease;
+      background: #16a34a;
+      border-radius: 999px;
+      transition: width 0.3s ease, background-color 0.3s ease;
+    }
+    .progress-warn { background: #d97706; }
+    .progress-full { background: #dc2626; }
+    .usage-footer {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-top: 6px;
+      font-size: 11.5px;
+      color: #6b7280;
+    }
+    .link-btn {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #2563eb;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    .link-btn:hover {
+      background: none;
+      color: #1d4ed8;
+    }
+
+    @media (max-width: 640px) {
+      .model-access-box, .usage-box {
+        margin-left: 0;
+      }
     }
 
     /* Khung kéo thả có input phủ kín bề mặt để tương thích 100% Windows 7 */
@@ -308,36 +371,49 @@
       >
       <button type="button" class="btn-danger" id="clearKeyBtn" style="display:none;" title="Xóa API Key khỏi trình duyệt để nhập mã mới">Xóa Key</button>
     </div>
+
     <div class="row">
       <span class="field-label">Mã Model:</span>
-      <input type="text" id="modelInput" list="modelSuggestions" value="gemini-2.5-flash" placeholder="Nhập mã model (VD: gemini-2.5-flash, gemini-3-flash-preview...)" autocomplete="off">
+      <input type="text" id="modelInput" list="modelSuggestions" value="gemini-2.5-flash" placeholder="Nhập mã model (VD: gemini-2.5-flash...)" autocomplete="off">
       <datalist id="modelSuggestions">
         <option value="gemini-2.5-flash">
-        <option value="gemini-2.5-pro">
         <option value="gemini-2.5-flash-lite">
+        <option value="gemini-2.5-pro">
       </datalist>
-      <button type="button" id="fetchModelsBtn" title="Lấy danh sách model khả dụng từ API Key">Lấy DS Model</button>
+      <button type="button" id="checkModelsBtn" title="Kiểm tra xem API Key hiện tại có quyền chạy model nào">Kiểm tra Model khả dụng</button>
       <button type="button" class="btn-primary" id="saveConfigBtn">Lưu cấu hình</button>
     </div>
 
-    <!-- Hiển thị quyền sử dụng & thanh trạng thái lượng sử dụng của Model đang chọn -->
-    <div class="model-status-box" id="modelStatusBox">
-      <div class="model-status-header">
-        <div>
-          <span id="modelBadge" class="badge badge-checking">Chưa kiểm tra quyền</span>
-          <button type="button" class="btn-mini" id="recheckModelBtn" title="Kiểm tra lại quyền sử dụng model này">Kiểm tra lại</button>
-        </div>
-        <div class="usage-meta">
-          <span id="usageLabel">0 / 1.500 lượt hôm nay (0 tokens)</span>
-          <button type="button" class="btn-mini" id="editLimitBtn" title="Chỉnh sửa định mức lượt/ngày cho model này">Sửa mức</button>
-        </div>
+    <!-- Danh sách model được quyền dùng / bị từ chối -->
+    <div class="model-access-box" id="modelAccessBox">
+      <div class="model-access-title" id="modelAccessTitle">Kết quả kiểm tra quyền sử dụng Model của API Key (nhấp vào thẻ xanh để chọn):</div>
+      <div class="model-chips" id="modelChips"></div>
+    </div>
+
+    <!-- Thanh trạng thái lượng sử dụng nằm ngay dưới Model -->
+    <div class="usage-box" id="usageBox">
+      <div class="usage-header">
+        <span>Lượng sử dụng hôm nay (<strong id="usageModelLabel">gemini-2.5-flash</strong>):</span>
+        <span class="usage-numbers">
+          <strong id="usageCountText">0 / 20 lượt</strong>
+          (<button type="button" class="link-btn" id="editQuotaBtn" title="Chỉnh giới hạn lượt gọi/ngày khớp với gói API của bạn">Sửa mức trần</button>)
+          &bull; <strong id="usageTokensText">0 tokens</strong>
+        </span>
       </div>
-      <div class="quota-bar-bg">
-        <div id="usageBarFill" class="quota-bar-fill"></div>
+      <div class="progress-track">
+        <div class="progress-fill" id="usageProgressBar"></div>
+      </div>
+      <div class="usage-footer">
+        <span id="usageLastText">Lần gần nhất: chưa có dữ liệu &bull; Bộ đếm tự làm mới theo chu kỳ ngày của Google.</span>
+        <span>
+          <button type="button" class="link-btn" id="resetUsageBtn">Đặt lại bộ đếm</button>
+          &nbsp;|&nbsp;
+          <a href="https://aistudio.google.com/usage" target="_blank" rel="noopener" style="color:#2563eb; font-weight:600;">Xem trên Google AI Studio &#8599;</a>
+        </span>
       </div>
     </div>
 
-    <div class="hint" id="keyStatus">Trạng thái: Chưa lưu API Key. Dán Key vào ô trên và bấm "Lưu cấu hình" để khóa bảo vệ.</div>
+    <div class="hint" id="keyStatus">Trạng thái: Chưa lưu API Key. Dán Key vào ô trên và bấm "Kiểm tra Model khả dụng" hoặc "Lưu cấu hình".</div>
   </div>
 
   <!-- 2. NẠP TỆP ĐẦU VÀO -->
@@ -396,15 +472,21 @@
   var clearKeyBtn = document.getElementById('clearKeyBtn');
   var modelInput = document.getElementById('modelInput');
   var modelSuggestions = document.getElementById('modelSuggestions');
-  var fetchModelsBtn = document.getElementById('fetchModelsBtn');
+  var checkModelsBtn = document.getElementById('checkModelsBtn');
   var saveConfigBtn = document.getElementById('saveConfigBtn');
   var keyStatus = document.getElementById('keyStatus');
 
-  var modelBadge = document.getElementById('modelBadge');
-  var recheckModelBtn = document.getElementById('recheckModelBtn');
-  var usageLabel = document.getElementById('usageLabel');
-  var editLimitBtn = document.getElementById('editLimitBtn');
-  var usageBarFill = document.getElementById('usageBarFill');
+  var modelAccessBox = document.getElementById('modelAccessBox');
+  var modelAccessTitle = document.getElementById('modelAccessTitle');
+  var modelChips = document.getElementById('modelChips');
+
+  var usageModelLabel = document.getElementById('usageModelLabel');
+  var usageCountText = document.getElementById('usageCountText');
+  var usageTokensText = document.getElementById('usageTokensText');
+  var usageProgressBar = document.getElementById('usageProgressBar');
+  var usageLastText = document.getElementById('usageLastText');
+  var editQuotaBtn = document.getElementById('editQuotaBtn');
+  var resetUsageBtn = document.getElementById('resetUsageBtn');
 
   var dropZone = document.getElementById('dropZone');
   var fileInput = document.getElementById('fileInput');
@@ -425,7 +507,7 @@
   var currentMimeType = '';
   var isKeyLocked = false;
   var sessionApiKey = '';
-  var verifyTimer = null;
+  var modelStatusMap = {}; // { 'gemini-2.5-flash': { state: 'ok'|'busy'|'denied', note: '...' } }
 
   function safeGetStorage(k) {
     try { return localStorage.getItem(k); } catch (e) { return null; }
@@ -441,210 +523,205 @@
     return (raw || '').trim().replace(/^models\//i, '');
   }
 
-  // --- QUẢN LÝ HẠN MỨC & KIỂM TRA QUYỀN MODEL ---
-  function getGoogleResetDateKey() {
+  // Tạo mã băm ngắn không thể dịch ngược từ API Key để tách biệt dữ liệu thống kê từng Key
+  function hashKey(str) {
+    if (!str) return 'nokey';
+    var h = 5381;
+    for (var i = 0; i < str.length; i++) {
+      h = ((h << 5) + h) + str.charCodeAt(i);
+      h = h & h;
+    }
+    return 'k' + Math.abs(h).toString(16);
+  }
+
+  // Lấy ngày hiện tại theo múi giờ Thái Bình Dương (America/Los_Angeles) - mốc reset quota ngày của Google
+  function getGoogleQuotaDayKey() {
     try {
-      return new Intl.DateTimeFormat('en-CA', {
-        timeZone: 'America/Los_Angeles'
-      }).format(new Date());
-    } catch (e) {
-      // Dự phòng nếu máy Windows 7 cũ thiếu dữ liệu múi giờ IANA (dùng UTC-8)
-      var ptTime = new Date(Date.now() - 8 * 3600 * 1000);
-      return ptTime.toISOString().slice(0, 10);
-    }
-  }
-
-  function getEstimatedLimit(modelName) {
-    var savedCustom = safeGetStorage('gemini_custom_limit_' + modelName);
-    if (savedCustom && parseInt(savedCustom, 10) > 0) {
-      return parseInt(savedCustom, 10);
-    }
-    var name = (modelName || '').toLowerCase();
-    if (name.indexOf('pro') !== -1) return 50;
-    if (name.indexOf('flash-lite') !== -1) return 1500;
-    return 1500;
-  }
-
-  function getUsageStore(modelName) {
-    var cleanModel = normalizeModelName(modelName) || 'default';
-    var dateKey = getGoogleResetDateKey();
-    var storageKey = 'gemini_usage_' + dateKey + '_' + cleanModel;
-    var saved = safeGetStorage(storageKey);
-    var defaultLimit = getEstimatedLimit(cleanModel);
-
-    if (saved) {
-      try {
-        var parsed = JSON.parse(saved);
-        parsed.limit = defaultLimit;
-        return parsed;
-      } catch (e) {}
-    }
-    return {
-      requests: 0,
-      tokens: 0,
-      limit: defaultLimit,
-      forcedFull: false
-    };
-  }
-
-  function saveUsageStore(modelName, data) {
-    var cleanModel = normalizeModelName(modelName) || 'default';
-    var dateKey = getGoogleResetDateKey();
-    var storageKey = 'gemini_usage_' + dateKey + '_' + cleanModel;
-    safeSetStorage(storageKey, JSON.stringify(data));
-  }
-
-  function renderModelUsageUI(modelName) {
-    var cleanModel = normalizeModelName(modelName);
-    if (!cleanModel) {
-      usageBarFill.style.width = '0%';
-      usageBarFill.style.backgroundColor = '#22c55e';
-      usageLabel.textContent = '0 / 0 lượt hôm nay (0 tokens)';
-      return;
-    }
-
-    var data = getUsageStore(cleanModel);
-    var percent = data.forcedFull
-      ? 100
-      : Math.min(100, Math.round((data.requests / data.limit) * 100));
-
-    usageBarFill.style.width = percent + '%';
-    if (percent >= 90) {
-      usageBarFill.style.backgroundColor = '#ef4444';
-    } else if (percent >= 70) {
-      usageBarFill.style.backgroundColor = '#f59e0b';
-    } else {
-      usageBarFill.style.backgroundColor = '#22c55e';
-    }
-
-    usageLabel.textContent =
-      data.requests.toLocaleString('vi-VN') + ' / ' +
-      data.limit.toLocaleString('vi-VN') + ' lượt hôm nay (' +
-      data.tokens.toLocaleString('vi-VN') + ' tokens)';
-  }
-
-  function setBadgeState(badgeClass, text) {
-    modelBadge.className = 'badge ' + badgeClass;
-    modelBadge.textContent = text;
-  }
-
-  function saveModelAccessCache(apiKey, modelName, badgeClass, text) {
-    if (!apiKey || !modelName) return;
-    var keyFingerprint = apiKey.slice(-8);
-    var cacheKey = 'model_access_' + keyFingerprint + '_' + modelName;
-    safeSetStorage(cacheKey, JSON.stringify({
-      badgeClass: badgeClass,
-      text: text,
-      ts: Date.now()
-    }));
-  }
-
-  async function verifySelectedModel(apiKey, rawModelName, forceRefresh) {
-    var modelName = normalizeModelName(rawModelName);
-    renderModelUsageUI(modelName);
-
-    if (!apiKey) {
-      setBadgeState('badge-checking', 'Chưa nhập API Key');
-      return;
-    }
-    if (!modelName) {
-      setBadgeState('badge-checking', 'Chưa chọn Model');
-      return;
-    }
-
-    var keyFingerprint = apiKey.slice(-8);
-    var cacheKey = 'model_access_' + keyFingerprint + '_' + modelName;
-
-    if (!forceRefresh) {
-      var cached = safeGetStorage(cacheKey);
-      if (cached) {
-        try {
-          var parsed = JSON.parse(cached);
-          if (Date.now() - parsed.ts < 86400000) {
-            setBadgeState(parsed.badgeClass, parsed.text);
-            return;
-          }
-        } catch (e) {}
-      }
-    }
-
-    setBadgeState('badge-checking', 'Đang kiểm tra quyền...');
-    recheckModelBtn.disabled = true;
-
-    try {
-      var url = 'https://generativelanguage.googleapis.com/v1beta/models/' +
-        encodeURIComponent(modelName) + ':generateContent?key=' + encodeURIComponent(apiKey);
-
-      var res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: '1' }] }],
-          generationConfig: { maxOutputTokens: 1 }
-        })
+      var fmt = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Los_Angeles',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
       });
-
-      var badgeClass = 'badge-ok';
-      var text = 'Khả dụng (Dùng được)';
-
-      if (!res.ok) {
-        var errData = await res.json().catch(function() { return {}; });
-        var msg = (errData && errData.error && errData.error.message ? errData.error.message : '').toLowerCase();
-
-        if (res.status === 429 && msg.indexOf('limit: 0') !== -1) {
-          badgeClass = 'badge-locked';
-          text = 'Không có quyền (Gói trả phí)';
-        } else if (res.status === 429) {
-          badgeClass = 'badge-limit';
-          text = 'Hết lượt tạm thời (429)';
-        } else if (res.status === 404) {
-          badgeClass = 'badge-locked';
-          text = 'Không tồn tại (404)';
-        } else if (res.status === 400 || res.status === 403) {
-          badgeClass = 'badge-locked';
-          text = 'Key lỗi hoặc bị từ chối (' + res.status + ')';
-        } else {
-          badgeClass = 'badge-locked';
-          text = 'Không hỗ trợ (' + res.status + ')';
-        }
-      }
-
-      setBadgeState(badgeClass, text);
-      saveModelAccessCache(apiKey, modelName, badgeClass, text);
+      return fmt.format(new Date());
     } catch (e) {
-      setBadgeState('badge-locked', 'Lỗi kết nối mạng');
-    } finally {
-      recheckModelBtn.disabled = false;
+      var d = new Date(Date.now() - 8 * 3600 * 1000);
+      return d.toISOString().slice(0, 10);
     }
   }
 
-  function recordApiSuccess(modelName, responseJson) {
-    var cleanModel = normalizeModelName(modelName);
-    var data = getUsageStore(cleanModel);
-    var usedTokens = (responseJson && responseJson.usageMetadata && responseJson.usageMetadata.totalTokenCount)
-      ? responseJson.usageMetadata.totalTokenCount
-      : 0;
-
-    data.requests += 1;
-    data.tokens += usedTokens;
-    saveUsageStore(cleanModel, data);
-    renderModelUsageUI(cleanModel);
-
-    var key = getActiveApiKey();
-    setBadgeState('badge-ok', 'Khả dụng (Dùng được)');
-    saveModelAccessCache(key, cleanModel, 'badge-ok', 'Khả dụng (Dùng được)');
+  function formatNumber(n) {
+    return (n || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   }
 
-  function markQuotaFull(modelName) {
-    var cleanModel = normalizeModelName(modelName);
-    var data = getUsageStore(cleanModel);
-    data.forcedFull = true;
-    saveUsageStore(cleanModel, data);
-    renderModelUsageUI(cleanModel);
-    setBadgeState('badge-limit', 'Hết lượt tạm thời (429)');
+  function getDefaultDailyLimit(model) {
+    var m = (model || '').toLowerCase();
+    if (m.indexOf('lite') !== -1) return 20;
+    if (m.indexOf('flash') !== -1) return 20;
+    if (m.indexOf('pro') !== -1) return 5;
+    return 20;
   }
 
-  // --- KHÓA / MỞ KHÓA API KEY ---
+  function getUsageStorageKey(apiKey, model) {
+    return 'gemini_usage_' + hashKey(apiKey) + '_' + normalizeModelName(model);
+  }
+
+  function getAccessStorageKey(apiKey) {
+    return 'gemini_access_' + hashKey(apiKey);
+  }
+
+  function loadModelUsage(apiKey, model) {
+    var m = normalizeModelName(model) || 'gemini-2.5-flash';
+    var dayKey = getGoogleQuotaDayKey();
+    var defaultLimit = getDefaultDailyLimit(m);
+    var raw = safeGetStorage(getUsageStorageKey(apiKey, m));
+    var data = null;
+    if (raw) {
+      try { data = JSON.parse(raw); } catch (e) { data = null; }
+    }
+    if (!data) {
+      return {
+        day: dayKey,
+        requests: 0,
+        limit: defaultLimit,
+        inputTokens: 0,
+        outputTokens: 0,
+        lastInput: 0,
+        lastOutput: 0,
+        quotaHit: false
+      };
+    }
+    // Tự động reset về 0 nếu đã sang ngày quota mới của Google, nhưng giữ lại mức trần người dùng đã cài
+    if (data.day !== dayKey) {
+      data.day = dayKey;
+      data.requests = 0;
+      data.inputTokens = 0;
+      data.outputTokens = 0;
+      data.lastInput = 0;
+      data.lastOutput = 0;
+      data.quotaHit = false;
+      saveModelUsage(apiKey, m, data);
+    }
+    if (!data.limit || data.limit < 1) data.limit = defaultLimit;
+    return data;
+  }
+
+  function saveModelUsage(apiKey, model, data) {
+    var m = normalizeModelName(model) || 'gemini-2.5-flash';
+    safeSetStorage(getUsageStorageKey(apiKey, m), JSON.stringify(data));
+  }
+
+  // Cập nhật giao diện thanh trạng thái lượng sử dụng dưới ô Model
+  function renderUsageBar() {
+    var apiKey = getActiveApiKey();
+    var model = normalizeModelName(modelInput.value) || 'chưa chọn';
+    usageModelLabel.textContent = model;
+
+    var u = loadModelUsage(apiKey, model);
+    var totalTokens = (u.inputTokens || 0) + (u.outputTokens || 0);
+    var pct = u.limit > 0 ? Math.min(100, Math.round((u.requests / u.limit) * 100)) : 0;
+    if (u.quotaHit && pct < 100) pct = 100;
+
+    usageCountText.textContent = u.requests + ' / ' + u.limit + ' lượt' + (u.quotaHit ? ' (Đã chạm trần)' : '');
+    usageTokensText.textContent = formatNumber(totalTokens) + ' tokens';
+
+    usageProgressBar.style.width = pct + '%';
+    usageProgressBar.className = 'progress-fill';
+    if (u.quotaHit || pct >= 90) {
+      usageProgressBar.classList.add('progress-full');
+    } else if (pct >= 70) {
+      usageProgressBar.classList.add('progress-warn');
+    }
+
+    if (u.lastInput > 0 || u.lastOutput > 0) {
+      usageLastText.textContent =
+        'Lần gần nhất: ' + formatNumber(u.lastInput) + ' input + ' + formatNumber(u.lastOutput) +
+        ' output = ' + formatNumber(u.lastInput + u.lastOutput) + ' tokens';
+    } else {
+      usageLastText.textContent = 'Lần gần nhất: chưa có dữ liệu • Tự làm mới mỗi ngày theo giờ Google (14:00–15:00 VN).';
+    }
+  }
+
+  // Hiển thị danh sách thẻ model có quyền dùng / không có quyền dùng
+  function renderModelAccessChips() {
+    var keys = Object.keys(modelStatusMap);
+    if (keys.length === 0) {
+      modelAccessBox.style.display = 'none';
+      return;
+    }
+
+    // Sắp xếp: Dùng được lên đầu -> Đang bận -> Không có quyền
+    var rank = { ok: 1, busy: 2, denied: 3 };
+    keys.sort(function(a, b) {
+      var ra = rank[modelStatusMap[a].state] || 9;
+      var rb = rank[modelStatusMap[b].state] || 9;
+      if (ra !== rb) return ra - rb;
+      return a.localeCompare(b);
+    });
+
+    var activeModel = normalizeModelName(modelInput.value);
+    var okCount = 0;
+    modelChips.innerHTML = '';
+
+    for (var i = 0; i < keys.length; i++) {
+      (function(modelName) {
+        var info = modelStatusMap[modelName];
+        if (info.state === 'ok') okCount++;
+
+        var chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'model-chip chip-' + info.state + (modelName === activeModel ? ' chip-active' : '');
+
+        var icon = info.state === 'ok' ? '✓' : (info.state === 'busy' ? '!' : '✕');
+        var label = info.state === 'ok' ? 'Dùng được' : (info.state === 'busy' ? 'Đang bận 429' : 'Không có quyền');
+        chip.textContent = icon + ' ' + modelName + ' (' + label + ')';
+        chip.title = info.note || label;
+
+        chip.addEventListener('click', function() {
+          modelInput.value = modelName;
+          var key = getActiveApiKey();
+          if (key) {
+            safeSetStorage('gemini_ocr_model', modelName);
+          }
+          renderModelAccessChips();
+          renderUsageBar();
+          if (info.state === 'denied') {
+            keyStatus.textContent = 'Cảnh báo: Model "' + modelName + '" đang báo không có quyền hoặc hạn mức = 0 với API Key này.';
+            keyStatus.style.color = '#991b1b';
+          } else {
+            keyStatus.textContent = 'Đã chọn model "' + modelName + '".';
+            keyStatus.style.color = '#166534';
+          }
+        });
+
+        modelChips.appendChild(chip);
+      })(keys[i]);
+    }
+
+    modelAccessTitle.textContent =
+      'Quyền sử dụng Model của API Key này (' + okCount + '/' + keys.length + ' model khả dụng — nhấp thẻ xanh để chọn):';
+    modelAccessBox.style.display = 'block';
+  }
+
+  function loadSavedAccessMap(apiKey) {
+    modelStatusMap = {};
+    if (!apiKey) {
+      renderModelAccessChips();
+      return;
+    }
+    var raw = safeGetStorage(getAccessStorageKey(apiKey));
+    if (raw) {
+      try { modelStatusMap = JSON.parse(raw) || {}; } catch (e) { modelStatusMap = {}; }
+    }
+    renderModelAccessChips();
+  }
+
+  function saveAccessMap(apiKey) {
+    if (!apiKey) return;
+    safeSetStorage(getAccessStorageKey(apiKey), JSON.stringify(modelStatusMap));
+  }
+
+  // Khóa cứng ô nhập và thay bằng chuỗi dấu sao giả để chống sửa và chống copy
   function lockApiKeyUI(realKey) {
     sessionApiKey = realKey;
     isKeyLocked = true;
@@ -668,101 +745,44 @@
     return apiKeyInput.value.trim();
   }
 
-  // Chặn phím tắt copy/cut trên ô API Key
   apiKeyInput.addEventListener('keydown', function(e) {
     if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C' || e.key === 'x' || e.key === 'X')) {
       e.preventDefault();
     }
   });
 
-  // Kiểm tra quyền khi người dùng dán Key xong và rời chuột khỏi ô Key
-  apiKeyInput.addEventListener('blur', function() {
-    var key = getActiveApiKey();
-    var model = normalizeModelName(modelInput.value);
-    if (key && model) {
-      verifySelectedModel(key, model, false);
-    }
+  apiKeyInput.addEventListener('input', function() {
+    renderUsageBar();
   });
 
-  // Cập nhật thanh trạng thái ngay khi gõ/chọn model mới
   modelInput.addEventListener('input', function() {
-    var val = normalizeModelName(modelInput.value);
-    renderModelUsageUI(val);
-
-    // Nếu người dùng vừa chọn đúng 1 model có trong danh sách gợi ý thì kiểm tra ngay
-    var options = modelSuggestions.options;
-    var matched = false;
-    for (var i = 0; i < options.length; i++) {
-      if (options[i].value === val) {
-        matched = true;
-        break;
-      }
-    }
-    if (matched) {
-      clearTimeout(verifyTimer);
-      verifySelectedModel(getActiveApiKey(), val, false);
-    }
+    renderModelAccessChips();
+    renderUsageBar();
   });
 
-  modelInput.addEventListener('change', function() {
-    clearTimeout(verifyTimer);
-    verifySelectedModel(getActiveApiKey(), modelInput.value, false);
-  });
-
-  recheckModelBtn.addEventListener('click', function() {
-    verifySelectedModel(getActiveApiKey(), modelInput.value, true);
-  });
-
-  editLimitBtn.addEventListener('click', function() {
-    var model = normalizeModelName(modelInput.value);
-    if (!model) {
-      alert('Vui lòng chọn hoặc nhập mã Model trước.');
-      return;
-    }
-    var currentLimit = getEstimatedLimit(model);
-    var inputVal = prompt(
-      'Nhập định mức lượt gọi/ngày (RPD) cho model "' + model + '":
-(Gói miễn phí thường là 1500 cho bản Flash, 50 cho bản Pro)',
-      String(currentLimit)
-    );
-    if (inputVal !== null) {
-      var parsed = parseInt(inputVal.trim(), 10);
-      if (!isNaN(parsed) && parsed > 0) {
-        safeSetStorage('gemini_custom_limit_' + model, String(parsed));
-        var store = getUsageStore(model);
-        store.limit = parsed;
-        if (store.requests < parsed) store.forcedFull = false;
-        saveUsageStore(model, store);
-        renderModelUsageUI(model);
-      } else {
-        alert('Vui lòng nhập một số nguyên lớn hơn 0.');
-      }
-    }
-  });
-
-  // Nạp API Key và Model đã lưu khi mở trang
+  // Nạp cấu hình khi mở trang
   (function init() {
     var savedKey = safeGetStorage('gemini_ocr_api_key');
     var savedModel = safeGetStorage('gemini_ocr_model');
     if (savedModel) {
       modelInput.value = savedModel;
     }
-    renderModelUsageUI(modelInput.value);
-
     if (savedKey) {
       lockApiKeyUI(savedKey);
-      keyStatus.textContent = 'API Key đã được lưu và khóa bảo vệ (không thể xem/sửa/copy). Model hiện tại: ' + modelInput.value;
+      loadSavedAccessMap(savedKey);
+      keyStatus.textContent = 'API Key đã được lưu và khóa bảo vệ. Model hiện tại: ' + modelInput.value;
       keyStatus.style.color = '#166534';
-      verifySelectedModel(savedKey, modelInput.value, false);
     }
+    renderUsageBar();
   })();
 
-  // Xóa API Key khỏi trình duyệt
   clearKeyBtn.addEventListener('click', function() {
     safeRemoveStorage('gemini_ocr_api_key');
     unlockApiKeyUI();
+    modelStatusMap = {};
+    renderModelAccessChips();
+    renderUsageBar();
     apiKeyInput.focus();
-    setBadgeState('badge-checking', 'Chưa nhập API Key');
     keyStatus.textContent = 'Đã xóa sạch API Key khỏi trình duyệt. Bạn có thể dán mã Key mới.';
     keyStatus.style.color = '#991b1b';
   });
@@ -784,26 +804,95 @@
     var ok = safeSetStorage('gemini_ocr_api_key', key);
     safeSetStorage('gemini_ocr_model', model);
     lockApiKeyUI(key);
+    loadSavedAccessMap(key);
+    renderUsageBar();
 
     keyStatus.textContent = ok
       ? 'Đã lưu và khóa bảo vệ API Key thành công! (Model: ' + model + ')'
       : 'Đã khóa API Key cho phiên này (Model: ' + model + ').';
     keyStatus.style.color = '#166534';
-
-    verifySelectedModel(key, model, true);
   });
 
-  // Tự động tải danh sách model đang hỗ trợ generateContent từ Google AI
-  fetchModelsBtn.addEventListener('click', async function() {
+  // Sửa mức trần lượt gọi/ngày cho model hiện tại
+  editQuotaBtn.addEventListener('click', function() {
+    var apiKey = getActiveApiKey();
+    var model = normalizeModelName(modelInput.value) || 'gemini-2.5-flash';
+    var u = loadModelUsage(apiKey, model);
+    var input = prompt(
+      'Nhập giới hạn số lượt gọi/ngày (RPD) cho model "' + model + '"\n' +
+      '(Ví dụ: gói miễn phí thường là 20 hoặc 250 lượt/ngày tùy model):',
+      String(u.limit)
+    );
+    if (input === null) return;
+    var num = parseInt(input, 10);
+    if (isNaN(num) || num < 1) {
+      alert('Vui lòng nhập một số nguyên lớn hơn 0.');
+      return;
+    }
+    u.limit = num;
+    if (u.requests < num) u.quotaHit = false;
+    saveModelUsage(apiKey, model, u);
+    renderUsageBar();
+  });
+
+  // Đặt lại bộ đếm sử dụng của model hiện tại
+  resetUsageBtn.addEventListener('click', function() {
+    var apiKey = getActiveApiKey();
+    var model = normalizeModelName(modelInput.value) || 'gemini-2.5-flash';
+    var u = loadModelUsage(apiKey, model);
+    u.requests = 0;
+    u.inputTokens = 0;
+    u.outputTokens = 0;
+    u.lastInput = 0;
+    u.lastOutput = 0;
+    u.quotaHit = false;
+    saveModelUsage(apiKey, model, u);
+    renderUsageBar();
+  });
+
+  // Kiểm tra 1 model cụ thể bằng request siêu nhẹ (1 token)
+  async function probeSingleModel(apiKey, modelName) {
+    var url = 'https://generativelanguage.googleapis.com/v1beta/models/' +
+              encodeURIComponent(modelName) + ':generateContent?key=' + encodeURIComponent(apiKey);
+    try {
+      var res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: '1' }] }],
+          generationConfig: { maxOutputTokens: 1 }
+        })
+      });
+      if (res.ok) {
+        return { state: 'ok', note: 'Model hoạt động tốt với API Key này.' };
+      }
+      var errData = {};
+      try { errData = await res.json(); } catch (e) {}
+      var msg = (errData && errData.error && errData.error.message) ? errData.error.message : ('HTTP ' + res.status);
+
+      if (res.status === 429) {
+        if (msg.indexOf('limit: 0') !== -1 || msg.indexOf('limit:0') !== -1) {
+          return { state: 'denied', note: 'Hạn mức bằng 0 (Key miễn phí không được cấp quyền model này).' };
+        }
+        return { state: 'busy', note: 'Có quyền dùng nhưng đang chạm giới hạn tốc độ phút (429): ' + msg };
+      }
+      return { state: 'denied', note: 'Không dùng được (' + res.status + '): ' + msg };
+    } catch (e) {
+      return { state: 'denied', note: 'Lỗi kết nối: ' + e.message };
+    }
+  }
+
+  // Lấy danh sách model và tự động kiểm tra quyền sử dụng từng model
+  checkModelsBtn.addEventListener('click', async function() {
     var key = getActiveApiKey();
     if (!key) {
-      alert('Vui lòng dán API Key trước để tải danh sách model.');
+      alert('Vui lòng dán API Key trước khi kiểm tra.');
       apiKeyInput.focus();
       return;
     }
 
-    fetchModelsBtn.disabled = true;
-    keyStatus.textContent = 'Đang kết nối Google AI để lấy danh sách model...';
+    checkModelsBtn.disabled = true;
+    keyStatus.textContent = 'Bước 1/2: Đang lấy danh sách model từ Google AI...';
     keyStatus.style.color = '#1e40af';
 
     try {
@@ -815,41 +904,88 @@
         throw new Error(msg);
       }
 
-      var validModels = [];
+      var allGeminiModels = [];
+      var ocrCandidates = [];
+      var skipKeywords = ['embedding', 'imagen', 'veo', 'tts', 'audio', 'live', 'computer-use', 'robotics', 'aqa', 'bisect', 'lyria'];
+
       if (data.models && data.models.length) {
         for (var i = 0; i < data.models.length; i++) {
           var m = data.models[i];
           if (m.supportedGenerationMethods && m.supportedGenerationMethods.indexOf('generateContent') !== -1) {
             var shortName = normalizeModelName(m.name);
             if (shortName.indexOf('gemini') !== -1) {
-              validModels.push(shortName);
+              allGeminiModels.push(shortName);
+
+              var isSkipped = false;
+              var lower = shortName.toLowerCase();
+              for (var k = 0; k < skipKeywords.length; k++) {
+                if (lower.indexOf(skipKeywords[k]) !== -1) {
+                  isSkipped = true;
+                  break;
+                }
+              }
+              if (!isSkipped && ocrCandidates.indexOf(shortName) === -1) {
+                ocrCandidates.push(shortName);
+              }
             }
           }
         }
       }
 
-      if (validModels.length === 0) {
+      if (allGeminiModels.length === 0) {
         throw new Error('Không tìm thấy model Gemini nào khả dụng cho Key này.');
       }
 
       modelSuggestions.innerHTML = '';
-      for (var j = 0; j < validModels.length; j++) {
+      for (var j = 0; j < allGeminiModels.length; j++) {
         var opt = document.createElement('option');
-        opt.value = validModels[j];
+        opt.value = allGeminiModels[j];
         modelSuggestions.appendChild(opt);
       }
 
-      modelInput.value = '';
-      renderModelUsageUI('');
-      setBadgeState('badge-checking', 'Hãy chọn 1 model từ danh sách');
-      modelInput.focus();
-      keyStatus.textContent = 'Đã tải ' + validModels.length + ' model! Nhấp vào ô Mã Model hoặc gõ "gemini" để chọn.';
+      // Giới hạn tối đa 10 model tiêu biểu để kiểm tra nhanh tránh vượt RPM
+      var toProbe = ocrCandidates.slice(0, 10);
+      modelStatusMap = {};
+
+      for (var idx = 0; idx < toProbe.length; idx += 3) {
+        var batch = toProbe.slice(idx, idx + 3);
+        keyStatus.textContent =
+          'Bước 2/2: Đang kiểm tra quyền thực tế của API Key (' +
+          Math.min(idx + batch.length, toProbe.length) + '/' + toProbe.length + ' model)...';
+
+        var results = await Promise.all(batch.map(function(mName) {
+          return probeSingleModel(key, mName);
+        }));
+
+        for (var b = 0; b < batch.length; b++) {
+          modelStatusMap[batch[b]] = results[b];
+        }
+        renderModelAccessChips();
+      }
+
+      saveAccessMap(key);
+
+      // Nếu model hiện tại chưa nhập hoặc bị từ chối, tự chọn model khả dụng đầu tiên
+      var curModel = normalizeModelName(modelInput.value);
+      if (!curModel || (modelStatusMap[curModel] && modelStatusMap[curModel].state === 'denied')) {
+        for (var p = 0; p < toProbe.length; p++) {
+          if (modelStatusMap[toProbe[p]] && modelStatusMap[toProbe[p]].state === 'ok') {
+            modelInput.value = toProbe[p];
+            safeSetStorage('gemini_ocr_model', toProbe[p]);
+            renderModelAccessChips();
+            renderUsageBar();
+            break;
+          }
+        }
+      }
+
+      keyStatus.textContent = 'Hoàn tất kiểm tra! Các thẻ màu xanh bên dưới là những model API Key của bạn được quyền sử dụng.';
       keyStatus.style.color = '#166534';
     } catch (err) {
-      keyStatus.textContent = 'Không lấy được danh sách model: ' + err.message;
+      keyStatus.textContent = 'Lỗi kiểm tra model: ' + err.message;
       keyStatus.style.color = '#991b1b';
     } finally {
-      fetchModelsBtn.disabled = false;
+      checkModelsBtn.disabled = false;
     }
   });
 
@@ -1047,34 +1183,53 @@
       var data = await response.json();
 
       if (!response.ok) {
-        var rawErr = (data && data.error && data.error.message) ? data.error.message : ('Lỗi HTTP ' + response.status);
-        var errMsg = rawErr;
-
-        if (response.status === 400) {
-          errMsg = 'API Key không hợp lệ hoặc tệp bị lỗi định dạng (' + rawErr + ')';
-        } else if (response.status === 404) {
-          errMsg = 'Không tìm thấy mã model "' + model + '". Hãy bấm "Lấy DS Model" để kiểm tra tên chính xác.';
-          setBadgeState('badge-locked', 'Không tồn tại (404)');
-          saveModelAccessCache(apiKey, model, 'badge-locked', 'Không tồn tại (404)');
-        } else if (response.status === 429) {
-          if (rawErr.toLowerCase().indexOf('limit: 0') !== -1) {
-            errMsg = 'Model "' + model + '" yêu cầu gói trả phí (limit: 0). Vui lòng đổi sang model khác (ví dụ: gemini-2.5-flash).';
-            setBadgeState('badge-locked', 'Không có quyền (Gói trả phí)');
-            saveModelAccessCache(apiKey, model, 'badge-locked', 'Không có quyền (Gói trả phí)');
+        var errMsg = (data && data.error && data.error.message) ? data.error.message : ('Lỗi HTTP ' + response.status);
+        if (response.status === 400) errMsg = 'API Key không hợp lệ hoặc tệp bị lỗi định dạng (' + errMsg + ')';
+        if (response.status === 404) {
+          modelStatusMap[model] = { state: 'denied', note: 'Không tìm thấy model (404).' };
+          saveAccessMap(apiKey);
+          renderModelAccessChips();
+          errMsg = 'Không tìm thấy mã model "' + model + '". Hãy bấm "Kiểm tra Model khả dụng" để chọn model đúng.';
+        }
+        if (response.status === 429) {
+          var u429 = loadModelUsage(apiKey, model);
+          if (errMsg.indexOf('limit: 0') !== -1 || errMsg.indexOf('limit:0') !== -1) {
+            modelStatusMap[model] = { state: 'denied', note: 'Hạn mức bằng 0 (không có quyền dùng model này).' };
+            errMsg = 'API Key không có quyền dùng model "' + model + '" (hạn mức = 0). Hãy chọn thẻ model màu xanh phía trên.';
           } else {
-            errMsg = 'Vượt quá giới hạn tốc độ gọi miễn phí. Vui lòng đợi 30 giây rồi bấm thử lại.';
-            markQuotaFull(model);
+            modelStatusMap[model] = { state: 'busy', note: 'Vừa chạm giới hạn tốc độ/ngày (429).' };
+            u429.quotaHit = true;
+            saveModelUsage(apiKey, model, u429);
+            renderUsageBar();
+            errMsg = 'Vượt quá giới hạn tốc độ hoặc hạn mức ngày của model "' + model + '". Vui lòng đợi hoặc đổi sang model xanh khác.';
           }
+          saveAccessMap(apiKey);
+          renderModelAccessChips();
         }
         throw new Error(errMsg);
       }
 
-      // Ghi nhận lượt sử dụng & token vào thanh trạng thái
-      recordApiSuccess(model, data);
-
       if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
         throw new Error('AI không trả về nội dung (có thể tệp bị trống hoặc bị bộ lọc an toàn chặn).');
       }
+
+      // Ghi nhận model dùng tốt + cập nhật thanh thống kê token & số lượt
+      modelStatusMap[model] = { state: 'ok', note: 'Đã xác nhận hoạt động tốt.' };
+      saveAccessMap(apiKey);
+      renderModelAccessChips();
+
+      var meta = data.usageMetadata || {};
+      var inTok = meta.promptTokenCount || 0;
+      var outTok = meta.candidatesTokenCount || 0;
+      var usage = loadModelUsage(apiKey, model);
+      usage.requests = (usage.requests || 0) + 1;
+      usage.inputTokens = (usage.inputTokens || 0) + inTok;
+      usage.outputTokens = (usage.outputTokens || 0) + outTok;
+      usage.lastInput = inTok;
+      usage.lastOutput = outTok;
+      usage.quotaHit = false;
+      saveModelUsage(apiKey, model, usage);
+      renderUsageBar();
 
       var rawText = data.candidates[0].content.parts[0].text || '';
       var cleanHtml = rawText
@@ -1084,7 +1239,10 @@
         .trim();
 
       editor.innerHTML = cleanHtml;
-      setStatus('Trích xuất hoàn tất! Hãy kiểm tra nhanh bên dưới và bấm tải file Word.', 'success');
+      setStatus(
+        'Trích xuất hoàn tất! (Tiêu thụ ' + formatNumber(inTok + outTok) + ' tokens). Hãy kiểm tra nhanh bên dưới và bấm tải file Word.',
+        'success'
+      );
 
     } catch (err) {
       setStatus('Lỗi xử lý: ' + err.message, 'error');
