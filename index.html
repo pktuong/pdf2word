@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Công cụ chuyển PDF / Ảnh sang Word (AI OCR)</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      background-color: #f0f2f5;
+      color: #1f2937;
+      margin: 0;
+      padding: 16px;
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #ffffff;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: 20px;
+      margin: 0 0 12px 0;
+      color: #111827;
+    }
+    h2 {
+      font-size: 15px;
+      margin: 0 0 10px 0;
+      color: #374151;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+    .row + .row {
+      margin-top: 10px;
+    }
+    .field-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #374151;
+      min-width: 85px;
+    }
+    input[type="password"], input[type="text"] {
+      padding: 8px 10px;
+      border: 1px solid #9ca3af;
+      border-radius: 4px;
+      font-size: 14px;
+      flex: 1;
+      min-width: 220px;
+    }
+    button {
+      padding: 8px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      background: #f9fafb;
+      color: #111827;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover:not(:disabled) {
+      background: #e5e7eb;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .btn-primary {
+      background: #2563eb;
+      color: #ffffff;
+      border-color: #1d4ed8;
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: #1d4ed8;
+    }
+    .btn-success {
+      background: #16a34a;
+      color: #ffffff;
+      border-color: #15803d;
+    }
+    .btn-success:hover:not(:disabled) {
+      background: #15803d;
+    }
+
+    /* Khung kéo thả có input phủ kín bề mặt để tương thích 100% Windows 7 */
+    .drop-zone {
+      position: relative;
+      border: 2px dashed #9ca3af;
+      border-radius: 6px;
+      padding: 26px 16px;
+      text-align: center;
+      background: #f9fafb;
+      cursor: pointer;
+      overflow: hidden;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: #2563eb;
+      background: #eff6ff;
+    }
+    .drop-zone input[type="file"] {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      z-index: 5;
+    }
+    .drop-zone p {
+      margin: 4px 0;
+      font-size: 14px;
+      color: #4b5563;
+      pointer-events: none;
+    }
+
+    .file-info {
+      margin-top: 12px;
+      padding: 10px;
+      background: #f3f4f6;
+      border-radius: 4px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 14px;
+    }
+    .file-info img {
+      max-height: 60px;
+      border: 1px solid #d1d5db;
+      border-radius: 3px;
+    }
+    .status-bar {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 4px;
+      font-size: 14px;
+      display: none;
+    }
+    .status-info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+    .status-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .status-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 8px;
+      background: #f3f4f6;
+      border: 1px solid #d1d5db;
+      border-bottom: none;
+      border-radius: 4px 4px 0 0;
+    }
+    .toolbar button {
+      padding: 4px 10px;
+      font-size: 13px;
+      font-weight: normal;
+      background: #ffffff;
+    }
+    .editor-area {
+      min-height: 420px;
+      max-height: 650px;
+      overflow-y: auto;
+      padding: 28px 36px;
+      background: #ffffff;
+      border: 1px solid #d1d5db;
+      border-radius: 0 0 4px 4px;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 13pt;
+      line-height: 1.35;
+      color: #000000;
+      outline: none;
+    }
+    .editor-area p { margin: 0 0 6pt 0; }
+    .editor-area table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 8pt 0;
+    }
+    .editor-area th, .editor-area td {
+      border: 1px solid #000000;
+      padding: 4pt 6pt;
+      vertical-align: top;
+    }
+    .hint {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Chuyển đổi PDF / Hình ảnh sang Word chuẩn Tiếng Việt</h1>
+
+  <!-- 1. CẤU HÌNH API KEY & MODEL -->
+  <div class="card">
+    <h2>1. Cấu hình Gemini API & Model</h2>
+    <div class="row">
+      <span class="field-label">API Key:</span>
+      <input type="password" id="apiKeyInput" placeholder="Dán mã Gemini API Key của bạn vào đây..." autocomplete="off">
+      <button type="button" id="toggleKeyBtn">Hiện</button>
+    </div>
+    <div class="row">
+      <span class="field-label">Mã Model:</span>
+      <input type="text" id="modelInput" list="modelSuggestions" value="gemini-2.5-flash" placeholder="Nhập mã model (VD: gemini-2.5-flash, gemini-3-flash-preview...)" autocomplete="off">
+      <datalist id="modelSuggestions">
+        <option value="gemini-2.5-flash">
+        <option value="gemini-2.5-pro">
+        <option value="gemini-2.5-flash-lite">
+      </datalist>
+      <button type="button" id="fetchModelsBtn" title="Lấy danh sách model khả dụng từ API Key">Lấy DS Model</button>
+      <button type="button" class="btn-primary" id="saveConfigBtn">Lưu cấu hình</button>
+    </div>
+    <div class="hint" id="keyStatus">Trạng thái: Sẵn sàng hoạt động. Bạn có thể gõ trực tiếp mã model mới hoặc bấm "Lấy DS Model" để chọn.</div>
+  </div>
+
+  <!-- 2. NẠP TỆP ĐẦU VÀO -->
+  <div class="card">
+    <h2>2. Chọn tài liệu đầu vào</h2>
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.webp,.gif,application/pdf,image/*">
+      <p><strong>Nhấp trực tiếp vào khung này để chọn tệp</strong> hoặc kéo thả tệp từ thư mục vào đây</p>
+      <p>Hoặc sao chép tệp / chụp màn hình rồi nhấn <strong>Ctrl + V</strong> ở bất kỳ đâu trên trang</p>
+      <p style="font-size:12px; color:#6b7280;">Hỗ trợ: PDF (khuyên dùng dưới 10 trang cho bản 1), JPG, PNG, WEBP (tối đa ~18MB)</p>
+    </div>
+
+    <div class="file-info" id="fileInfo">
+      <div class="row">
+        <img id="imagePreview" src="" alt="Xem trước" style="display:none;">
+        <div>
+          <strong id="fileNameDisplay">ten-file.pdf</strong><br>
+          <span id="fileSizeDisplay" style="font-size:12px; color:#4b5563;">0 KB</span>
+        </div>
+      </div>
+      <div class="row">
+        <button type="button" id="clearFileBtn">Xóa tệp</button>
+        <button type="button" class="btn-primary" id="convertBtn">Bắt đầu trích xuất</button>
+      </div>
+    </div>
+
+    <div class="status-bar" id="statusBar"></div>
+  </div>
+
+  <!-- 3. XEM TRƯỚC, SỬA NHANH & XUẤT WORD -->
+  <div class="card">
+    <h2>3. Xem trước, sửa nhanh & Xuất file Word (.doc)</h2>
+    <div class="toolbar">
+      <button type="button" onclick="formatDoc('bold')"><b>B</b></button>
+      <button type="button" onclick="formatDoc('italic')"><i>I</i></button>
+      <button type="button" onclick="formatDoc('underline')"><u>U</u></button>
+      <button type="button" onclick="formatDoc('justifyLeft')">Căn trái</button>
+      <button type="button" onclick="formatDoc('justifyCenter')">Căn giữa</button>
+      <button type="button" onclick="formatDoc('justifyRight')">Căn phải</button>
+      <button type="button" onclick="formatDoc('justifyFull')">Căn đều</button>
+      <button type="button" id="clearEditorBtn" style="margin-left:auto;">Xóa trắng khung</button>
+    </div>
+    <div class="editor-area" id="editor" contenteditable="true" spellcheck="false">
+      <p style="color:#9ca3af;">Nội dung văn bản và bảng biểu sau khi trích xuất sẽ hiển thị tại đây. Bạn có thể nhấp trực tiếp vào đây để gõ sửa lỗi chính tả trước khi tải về...</p>
+    </div>
+
+    <div class="row" style="margin-top: 12px;">
+      <input type="text" id="outputFileName" value="van-ban-chuyen-doi" placeholder="Tên file tải về (không cần nhập .doc)">
+      <button type="button" class="btn-success" id="exportDocBtn">Tải về file Word (.doc - Khổ A4)</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  var apiKeyInput = document.getElementById('apiKeyInput');
+  var toggleKeyBtn = document.getElementById('toggleKeyBtn');
+  var modelInput = document.getElementById('modelInput');
+  var modelSuggestions = document.getElementById('modelSuggestions');
+  var fetchModelsBtn = document.getElementById('fetchModelsBtn');
+  var saveConfigBtn = document.getElementById('saveConfigBtn');
+  var keyStatus = document.getElementById('keyStatus');
+
+  var dropZone = document.getElementById('dropZone');
+  var fileInput = document.getElementById('fileInput');
+  var fileInfo = document.getElementById('fileInfo');
+  var imagePreview = document.getElementById('imagePreview');
+  var fileNameDisplay = document.getElementById('fileNameDisplay');
+  var fileSizeDisplay = document.getElementById('fileSizeDisplay');
+  var clearFileBtn = document.getElementById('clearFileBtn');
+  var convertBtn = document.getElementById('convertBtn');
+  var statusBar = document.getElementById('statusBar');
+
+  var editor = document.getElementById('editor');
+  var clearEditorBtn = document.getElementById('clearEditorBtn');
+  var outputFileName = document.getElementById('outputFileName');
+  var exportDocBtn = document.getElementById('exportDocBtn');
+
+  var currentBase64 = '';
+  var currentMimeType = '';
+
+  function safeGetStorage(k) {
+    try { return localStorage.getItem(k); } catch (e) { return null; }
+  }
+  function safeSetStorage(k, v) {
+    try { localStorage.setItem(k, v); return true; } catch (e) { return false; }
+  }
+
+  function normalizeModelName(raw) {
+    return (raw || '').trim().replace(/^models\//i, '');
+  }
+
+  // Nạp API Key và Model đã lưu khi mở trang
+  (function init() {
+    var savedKey = safeGetStorage('gemini_ocr_api_key');
+    var savedModel = safeGetStorage('gemini_ocr_model');
+    if (savedKey) {
+      apiKeyInput.value = savedKey;
+    }
+    if (savedModel) {
+      modelInput.value = savedModel;
+    }
+    if (savedKey || savedModel) {
+      keyStatus.textContent = 'Đã nạp cấu hình từ bộ nhớ trình duyệt (Model hiện tại: ' + modelInput.value + ').';
+      keyStatus.style.color = '#166534';
+    }
+  })();
+
+  toggleKeyBtn.addEventListener('click', function() {
+    if (apiKeyInput.type === 'password') {
+      apiKeyInput.type = 'text';
+      toggleKeyBtn.textContent = 'Ẩn';
+    } else {
+      apiKeyInput.type = 'password';
+      toggleKeyBtn.textContent = 'Hiện';
+    }
+  });
+
+  saveConfigBtn.addEventListener('click', function() {
+    var key = apiKeyInput.value.trim();
+    var model = normalizeModelName(modelInput.value);
+    if (!key) {
+      alert('Vui lòng nhập mã API Key trước khi lưu.');
+      apiKeyInput.focus();
+      return;
+    }
+    if (!model) {
+      alert('Vui lòng nhập mã Model trước khi lưu.');
+      modelInput.focus();
+      return;
+    }
+    modelInput.value = model;
+    var ok = safeSetStorage('gemini_ocr_api_key', key);
+    safeSetStorage('gemini_ocr_model', model);
+    keyStatus.textContent = ok
+      ? 'Đã lưu API Key và Model (' + model + ') thành công!'
+      : 'Đã nhận cấu hình cho phiên này (trình duyệt đang chặn lưu tự động).';
+    keyStatus.style.color = '#166534';
+  });
+
+  // Tự động tải danh sách model đang hỗ trợ generateContent từ Google AI
+  fetchModelsBtn.addEventListener('click', async function() {
+    var key = apiKeyInput.value.trim();
+    if (!key) {
+      alert('Vui lòng nhập API Key trước để tải danh sách model.');
+      apiKeyInput.focus();
+      return;
+    }
+
+    fetchModelsBtn.disabled = true;
+    keyStatus.textContent = 'Đang kết nối Google AI để lấy danh sách model...';
+    keyStatus.style.color = '#1e40af';
+
+    try {
+      var res = await fetch('https://generativelanguage.googleapis.com/v1beta/models?key=' + encodeURIComponent(key));
+      var data = await res.json();
+
+      if (!res.ok) {
+        var msg = (data && data.error && data.error.message) ? data.error.message : ('Lỗi HTTP ' + res.status);
+        throw new Error(msg);
+      }
+
+      var validModels = [];
+      if (data.models && data.models.length) {
+        for (var i = 0; i < data.models.length; i++) {
+          var m = data.models[i];
+          if (m.supportedGenerationMethods && m.supportedGenerationMethods.indexOf('generateContent') !== -1) {
+            var shortName = normalizeModelName(m.name);
+            if (shortName.indexOf('gemini') !== -1) {
+              validModels.push(shortName);
+            }
+          }
+        }
+      }
+
+      if (validModels.length === 0) {
+        throw new Error('Không tìm thấy model Gemini nào khả dụng cho Key này.');
+      }
+
+      modelSuggestions.innerHTML = '';
+      for (var j = 0; j < validModels.length; j++) {
+        var opt = document.createElement('option');
+        opt.value = validModels[j];
+        modelSuggestions.appendChild(opt);
+      }
+
+      // Xóa trắng ô nhập để người dùng nhấp vào thấy ngay danh sách gợi ý
+      modelInput.value = '';
+      modelInput.focus();
+      keyStatus.textContent = 'Đã tải ' + validModels.length + ' model! Nhấp vào ô Mã Model hoặc gõ "gemini" để chọn.';
+      keyStatus.style.color = '#166534';
+    } catch (err) {
+      keyStatus.textContent = 'Không lấy được danh sách model: ' + err.message;
+      keyStatus.style.color = '#991b1b';
+    } finally {
+      fetchModelsBtn.disabled = false;
+    }
+  });
+
+  function setStatus(msg, type) {
+    statusBar.style.display = 'block';
+    statusBar.className = 'status-bar status-' + type;
+    statusBar.textContent = msg;
+  }
+
+  function hideStatus() {
+    statusBar.style.display = 'none';
+  }
+
+  function detectMimeType(file) {
+    if (file.type && file.type !== 'application/octet-stream' && file.type !== 'application/x-pdf') {
+      return file.type;
+    }
+    var name = (file.name || '').toLowerCase();
+    if (name.endsWith('.pdf') || file.type === 'application/x-pdf') return 'application/pdf';
+    if (name.endsWith('.jpg') || name.endsWith('.jpeg')) return 'image/jpeg';
+    if (name.endsWith('.png')) return 'image/png';
+    if (name.endsWith('.webp')) return 'image/webp';
+    if (name.endsWith('.gif')) return 'image/gif';
+    return '';
+  }
+
+  function handleFile(file) {
+    if (!file) return;
+
+    var maxBytes = 18 * 1024 * 1024;
+    if (file.size > maxBytes) {
+      setStatus('Tệp quá lớn (' + (file.size / 1024 / 1024).toFixed(1) + ' MB). Bản 1 hỗ trợ tốt nhất tệp dưới 18 MB.', 'error');
+      return;
+    }
+
+    var detectedMime = detectMimeType(file);
+    if (!detectedMime) {
+      setStatus('Định dạng tệp "' + (file.name || 'không rõ tên') + '" không được hỗ trợ. Vui lòng chọn PDF, JPG, PNG hoặc WEBP.', 'error');
+      return;
+    }
+
+    hideStatus();
+    currentMimeType = detectedMime;
+
+    var baseName = file.name ? file.name.replace(/\.[^/.]+$/, '') : 'anh-chup-man-hinh';
+    outputFileName.value = baseName + '-word';
+
+    fileNameDisplay.textContent = file.name || 'Tệp dán từ bộ nhớ tạm';
+    fileSizeDisplay.textContent = (file.size / 1024).toFixed(1) + ' KB • ' + detectedMime;
+
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var dataUrl = e.target.result;
+      currentBase64 = dataUrl.split(',')[1];
+
+      if (detectedMime.indexOf('image/') === 0) {
+        imagePreview.src = dataUrl;
+        imagePreview.style.display = 'block';
+      } else {
+        imagePreview.style.display = 'none';
+      }
+      fileInfo.style.display = 'flex';
+      setStatus('Đã nạp tệp thành công! Hãy bấm nút "Bắt đầu trích xuất".', 'info');
+    };
+    reader.onerror = function() {
+      setStatus('Không thể đọc tệp từ ổ đĩa. Vui lòng kiểm tra xem tệp có đang bị khóa hay không.', 'error');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  fileInput.addEventListener('change', function(e) {
+    if (e.target.files && e.target.files[0]) {
+      handleFile(e.target.files[0]);
+    }
+  });
+
+  fileInput.addEventListener('dragenter', function() {
+    dropZone.classList.add('dragover');
+  });
+  fileInput.addEventListener('dragleave', function() {
+    dropZone.classList.remove('dragover');
+  });
+  fileInput.addEventListener('drop', function() {
+    dropZone.classList.remove('dragover');
+  });
+
+  window.addEventListener('dragover', function(e) {
+    e.preventDefault();
+  });
+  window.addEventListener('drop', function(e) {
+    if (e.target !== fileInput) {
+      e.preventDefault();
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+        handleFile(e.dataTransfer.files[0]);
+      }
+    }
+  });
+
+  window.addEventListener('paste', function(e) {
+    var cd = e.clipboardData || window.clipboardData;
+    if (!cd) return;
+
+    if (cd.files && cd.files.length > 0) {
+      e.preventDefault();
+      handleFile(cd.files[0]);
+      return;
+    }
+
+    if (cd.items) {
+      for (var i = 0; i < cd.items.length; i++) {
+        if (cd.items[i].kind === 'file') {
+          var blob = cd.items[i].getAsFile();
+          if (blob) {
+            e.preventDefault();
+            handleFile(blob);
+            return;
+          }
+        }
+      }
+    }
+  });
+
+  clearFileBtn.addEventListener('click', function() {
+    currentBase64 = '';
+    currentMimeType = '';
+    fileInput.value = '';
+    fileInfo.style.display = 'none';
+    hideStatus();
+  });
+
+  convertBtn.addEventListener('click', async function() {
+    var apiKey = apiKeyInput.value.trim();
+    var model = normalizeModelName(modelInput.value);
+
+    if (!apiKey) {
+      setStatus('Bạn chưa nhập Gemini API Key ở mục 1.', 'error');
+      apiKeyInput.focus();
+      return;
+    }
+    if (!model) {
+      setStatus('Bạn chưa nhập mã Model ở mục 1.', 'error');
+      modelInput.focus();
+      return;
+    }
+    if (!currentBase64) {
+      setStatus('Vui lòng chọn tệp PDF hoặc hình ảnh trước.', 'error');
+      return;
+    }
+
+    modelInput.value = model;
+    safeSetStorage('gemini_ocr_api_key', apiKey);
+    safeSetStorage('gemini_ocr_model', model);
+
+    var endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent?key=' + encodeURIComponent(apiKey);
+
+    var promptInstruction =
+      'Bạn là chuyên gia số hóa và bóc tách văn bản hành chính tiếng Việt chính xác tuyệt đối.\n' +
+      'Nhiệm vụ: Trích xuất TOÀN BỘ nội dung chữ và bảng biểu từ tệp đính kèm sang mã HTML sạch để mở trong Microsoft Word.\n' +
+      'Quy tắc bắt buộc:\n' +
+      '1. Đọc chuẩn xác 100% chính tả tiếng Việt, đặc biệt lưu ý phân biệt dấu hỏi (?), dấu ngã (~), dấu nặng (.), tên riêng, số hiệu văn bản, ngày tháng năm và các con số.\n' +
+      '2. Giữ nguyên cấu trúc văn bản: dùng <p> cho đoạn văn, <b> cho chữ in đậm, <i> cho chữ in nghiêng, <ul>/<ol> cho danh sách.\n' +
+      '3. Với bảng biểu: dùng thẻ <table>, <tr>, <th>, <td>. Giữ đúng các ô gộp cột (colspan) và gộp dòng (rowspan) nếu có.\n' +
+      '4. Với phần quốc hiệu tiêu ngữ hoặc bố cục 2 cột đầu trang công văn, có thể dùng <table> không viền (style="border:none;") để giữ đúng vị trí trái/phải.\n' +
+      '5. TUYỆT ĐỐI KHÔNG tóm tắt, KHÔNG bỏ sót nội dung, KHÔNG thêm lời chào hay giải thích.\n' +
+      '6. Chỉ trả về đoạn mã HTML bên trong nội dung (không bao gồm thẻ <html>, <head>, <body> và không bọc trong dấu ```html).';
+
+    convertBtn.disabled = true;
+    setStatus('Đang gửi tài liệu lên model "' + model + '" để nhận diện tiếng Việt... Vui lòng chờ trong giây lát.', 'info');
+
+    try {
+      var response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: promptInstruction },
+              {
+                inline_data: {
+                  mime_type: currentMimeType,
+                  data: currentBase64
+                }
+              }
+            ]
+          }],
+          generationConfig: {
+            temperature: 0.1
+          }
+        })
+      });
+
+      var data = await response.json();
+
+      if (!response.ok) {
+        var errMsg = (data && data.error && data.error.message) ? data.error.message : ('Lỗi HTTP ' + response.status);
+        if (response.status === 400) errMsg = 'API Key không hợp lệ hoặc tệp bị lỗi định dạng (' + errMsg + ')';
+        if (response.status === 404) errMsg = 'Không tìm thấy mã model "' + model + '". Hãy bấm "Lấy DS Model" để kiểm tra tên chính xác.';
+        if (response.status === 429) errMsg = 'Vượt quá giới hạn tốc độ gọi miễn phí. Vui lòng đợi 30 giây rồi bấm thử lại.';
+        throw new Error(errMsg);
+      }
+
+      if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+        throw new Error('AI không trả về nội dung (có thể tệp bị trống hoặc bị bộ lọc an toàn chặn).');
+      }
+
+      var rawText = data.candidates[0].content.parts[0].text || '';
+      var cleanHtml = rawText
+        .replace(/^```html\s*/i, '')
+        .replace(/^```\s*/i, '')
+        .replace(/```\s*$/i, '')
+        .trim();
+
+      editor.innerHTML = cleanHtml;
+      setStatus('Trích xuất hoàn tất! Hãy kiểm tra nhanh bên dưới và bấm tải file Word.', 'success');
+
+    } catch (err) {
+      setStatus('Lỗi xử lý: ' + err.message, 'error');
+    } finally {
+      convertBtn.disabled = false;
+    }
+  });
+
+  function formatDoc(cmd) {
+    document.execCommand(cmd, false, null);
+    editor.focus();
+  }
+
+  clearEditorBtn.addEventListener('click', function() {
+    editor.innerHTML = '';
+    editor.focus();
+  });
+
+  exportDocBtn.addEventListener('click', function() {
+    var contentHtml = editor.innerHTML.trim();
+    if (!contentHtml) {
+      alert('Khung nội dung đang trống, chưa có gì để xuất file.');
+      return;
+    }
+
+    var fileName = (outputFileName.value.trim() || 'van-ban-chuyen-doi').replace(/\.doc$/i, '') + '.doc';
+
+    var wordDocument =
+      "<html xmlns:o='urn:schemas-microsoft-com:office:office' " +
+      "xmlns:w='urn:schemas-microsoft-com:office:word' " +
+      "xmlns='http://www.w3.org/TR/REC-html40'>" +
+      "<head><meta charset='utf-8'><title>Document</title>" +
+      "<!--[if gte mso 9]><xml>" +
+      "<w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument>" +
+      "</xml><![endif]-->" +
+      "<style>" +
+      "@page WordSection1 {" +
+      "  size: 21.0cm 29.7cm;" +
+      "  margin: 2.0cm 1.5cm 2.0cm 3.0cm;" +
+      "  mso-header-margin: 1.27cm;" +
+      "  mso-footer-margin: 1.27cm;" +
+      "  mso-paper-source: 0;" +
+      "}" +
+      "div.WordSection1 { page: WordSection1; }" +
+      "body { font-family: 'Times New Roman', serif; font-size: 13pt; line-height: 1.3; color: #000000; }" +
+      "p { margin-top: 0pt; margin-bottom: 6pt; }" +
+      "table { border-collapse: collapse; width: 100%; margin-top: 4pt; margin-bottom: 8pt; }" +
+      "th, td { border: 1px solid #000000; padding: 4pt 6pt; vertical-align: top; font-family: 'Times New Roman', serif; font-size: 12pt; }" +
+      "</style></head>" +
+      "<body><div class='WordSection1'>" + contentHtml + "</div></body></html>";
+
+    var blob = new Blob(['\ufeff', wordDocument], {
+      type: 'application/msword;charset=utf-8'
+    });
+
+    var url = URL.createObjectURL(blob);
+    var downloadLink = document.createElement('a');
+    downloadLink.href = url;
+    downloadLink.download = fileName;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+    URL.revokeObjectURL(url);
+  });
+</script>
+</body>
+</html>
